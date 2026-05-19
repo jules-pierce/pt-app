@@ -140,8 +140,6 @@ main {
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-2);
 }
 
 .exercise-number {
@@ -158,6 +156,8 @@ main {
   flex-shrink: 0;
 }
 
+.exercise-info { flex: 1; }
+
 .exercise-name {
   font-weight: 700;
   font-size: 1rem;
@@ -172,56 +172,27 @@ main {
   letter-spacing: 0.06em;
 }
 
-/* ── Sets Table ──────────────────────────────────────────────────────────── */
-.sets-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
+.exercise-prescription {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
 }
 
-.sets-table thead th {
-  text-align: left;
-  padding: 0.5rem 1.25rem;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-  font-weight: 600;
-  border-bottom: 1px solid var(--border);
-}
-
-.sets-table tbody tr {
-  border-bottom: 1px solid var(--border);
-  transition: background 0.15s;
-}
-
-.sets-table tbody tr:last-child { border-bottom: none; }
-.sets-table tbody tr:hover { background: var(--surface-2); }
-
-.sets-table tbody td {
-  padding: 0.65rem 1.25rem;
-  vertical-align: middle;
-}
-
-.sets-table tbody td:first-child {
-  color: var(--text-muted);
-  font-weight: 600;
-  width: 3rem;
-}
-
-.sets-table tbody td:nth-child(2) {
-  font-weight: 700;
-  color: var(--green);
-}
-
-.sets-table tbody td:nth-child(3) {
-  font-weight: 600;
-}
-
-.note-cell {
-  color: var(--text-muted);
+.pill {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
   font-size: 0.8rem;
-  font-style: italic;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.pill.weight {
+  color: var(--green);
+  border-color: rgba(62, 207, 142, 0.3);
+  background: rgba(62, 207, 142, 0.08);
 }
 
 /* ── Footer ──────────────────────────────────────────────────────────────── */
@@ -237,10 +208,10 @@ footer span { color: #e05c7a; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
-  .stats-bar { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+  .stats-bar { gap: 0.5rem; }
   .stat { padding: 0.75rem 0.5rem; }
   .stat-value { font-size: 1.25rem; }
-  .exercise-header { padding: 0.85rem 1rem; }
-  .sets-table thead th,
-  .sets-table tbody td { padding: 0.5rem 0.75rem; }
+  .exercise-header { padding: 0.85rem 1rem; gap: 0.65rem; }
+  .exercise-prescription { gap: 0.3rem; }
+  .pill { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
 }
