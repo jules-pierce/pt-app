@@ -195,6 +195,77 @@ main {
   background: rgba(62, 207, 142, 0.08);
 }
 
+/* ── Back Link ───────────────────────────────────────────────────────────── */
+.back-link {
+  display: inline-block;
+  color: var(--accent-light);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 1rem;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+.back-link:hover { opacity: 1; }
+
+/* ── Workout List ────────────────────────────────────────────────────────── */
+.workout-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.workout-card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.workout-card:hover {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.workout-card-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.25rem;
+  gap: 1rem;
+}
+
+.workout-card-title {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.workout-card-date {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.workout-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.workout-card-arrow {
+  color: var(--accent-light);
+  font-size: 1rem;
+  transition: transform 0.15s;
+}
+
+.workout-card:hover .workout-card-arrow { transform: translateX(3px); }
+
 /* ── Footer ──────────────────────────────────────────────────────────────── */
 footer {
   text-align: center;
