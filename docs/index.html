@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Today's Workout</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <span class="label">Today's Workout</span>
+      <h1 id="workout-title">Upper Body Strength</h1>
+      <p id="workout-meta"></p>
+    </div>
+  </header>
+
+  <main>
+    <section class="stats-bar">
+      <div class="stat">
+        <span class="stat-value" id="total-exercises">0</span>
+        <span class="stat-label">Exercises</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="total-sets">0</span>
+        <span class="stat-label">Total Sets</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="est-time">0 min</span>
+        <span class="stat-label">Est. Time</span>
+      </div>
+    </section>
+
+    <section class="workout-notes" id="workout-notes-section">
+      <p id="workout-notes"></p>
+    </section>
+
+    <div class="exercise-list" id="exercise-list"></div>
+  </main>
+
+  <footer>
+    <p>Built with <span>♥</span> for the grind</p>
+  </footer>
+
+  <script src="workout.js"></script>
+</body>
+</html>
