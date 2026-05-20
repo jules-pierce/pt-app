@@ -1,5 +1,5 @@
 function weeks(exercises) {
-  return [1, 2, 3, 4].map(() => ({ exercises }));
+  return [1, 2, 3, 4].map((_, i) => ({ exercises, rpe: 5 + i }));
 }
 
 const workouts = [

@@ -25,7 +25,7 @@ if (!workout) {
     workout.weeks.forEach((_, i) => {
       const btn = document.createElement("button");
       btn.className = "week-tab" + (i === activeWeek ? " active" : "");
-      btn.textContent = `Week ${i + 1}`;
+      btn.innerHTML = `Week ${i + 1} <span class="tab-rpe">RPE ${workout.weeks[i].rpe}</span>`;
       btn.addEventListener("click", () => {
         activeWeek = i;
         const url = new URL(window.location);

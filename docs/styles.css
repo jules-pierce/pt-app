@@ -104,6 +104,14 @@ main {
   color: #fff;
 }
 
+.tab-rpe {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  opacity: 0.7;
+  margin-top: 0.1rem;
+}
+
 /* ── Stats Bar ───────────────────────────────────────────────────────────── */
 .stats-bar {
   display: grid;
