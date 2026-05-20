@@ -229,10 +229,22 @@ main {
   white-space: nowrap;
 }
 
-.pill.weight {
+.weight-input {
   color: var(--green);
   border-color: rgba(62, 207, 142, 0.3);
   background: rgba(62, 207, 142, 0.08);
+  width: 7rem;
+  text-align: center;
+  outline: none;
+  font-family: var(--font);
+  cursor: text;
+}
+
+.weight-input::placeholder { color: rgba(62, 207, 142, 0.4); }
+
+.weight-input:focus {
+  border-color: var(--green);
+  background: rgba(62, 207, 142, 0.15);
 }
 
 /* ── Back Link ───────────────────────────────────────────────────────────── */

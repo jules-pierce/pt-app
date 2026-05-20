@@ -51,6 +51,9 @@ if (!workout) {
     list.innerHTML = "";
 
     exercises.forEach((exercise, idx) => {
+      const storageKey = `pt_weight_${id}_w${activeWeek}_e${idx}`;
+      const savedWeight = localStorage.getItem(storageKey) || "";
+
       const card = document.createElement("div");
       card.className = "exercise-card";
       card.innerHTML = `
@@ -63,10 +66,21 @@ if (!workout) {
           <div class="exercise-prescription">
             <span class="pill">${exercise.sets} sets</span>
             <span class="pill">${exercise.reps} reps</span>
-            <span class="pill weight">${exercise.weight}</span>
+            <input
+              class="pill weight-input"
+              type="text"
+              placeholder="weight"
+              value="${savedWeight}"
+              aria-label="Weight for ${exercise.name}"
+            />
           </div>
         </div>
       `;
+
+      card.querySelector(".weight-input").addEventListener("input", (e) => {
+        localStorage.setItem(storageKey, e.target.value);
+      });
+
       list.appendChild(card);
     });
   }
