@@ -1,7 +1,7 @@
 const list = document.getElementById("workout-list");
 
 workouts.forEach((workout, idx) => {
-  const totalSets = workout.exercises.reduce((sum, ex) => sum + ex.sets, 0);
+  const totalSets = workout.weeks[0].exercises.reduce((sum, ex) => sum + ex.sets, 0);
   const estTime = Math.round(totalSets * 2.5);
 
   const card = document.createElement("a");
@@ -14,7 +14,7 @@ workouts.forEach((workout, idx) => {
         <div class="workout-card-date">${workout.date}</div>
       </div>
       <div class="workout-card-meta">
-        <span>${workout.exercises.length} exercises</span>
+        <span>${workout.weeks[0].exercises.length} exercises</span>
         <span>${totalSets} sets</span>
         <span>~${estTime} min</span>
         <span class="workout-card-arrow">→</span>
