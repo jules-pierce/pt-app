@@ -50,21 +50,43 @@ if (!workout) {
     document.getElementById("modal-name").textContent     = exercise.name;
     document.getElementById("modal-category").textContent = exercise.category;
 
-    const savedWeight = localStorage.getItem(weightKey) || "";
     document.getElementById("modal-prescription").innerHTML = `
       <span class="pill">${exercise.sets} sets</span>
       <span class="pill">${exercise.reps} reps</span>
-      <input class="pill weight-input" type="text" placeholder="weight" value="${savedWeight}" aria-label="Weight" />
     `;
 
-    // Keep modal weight in sync with the card
-    const modalWeightInput = document.getElementById("modal-prescription").querySelector(".weight-input");
-    modalWeightInput.addEventListener("input", (e) => {
-      localStorage.setItem(weightKey, e.target.value);
-      const cardInput = document.querySelector(`#exercise-list .exercise-card:nth-child(${idx + 1}) .weight-input`);
-      if (cardInput) cardInput.value = e.target.value;
+
+    // ── Weights table ────────────────────────────────────────────────────────
+    const weightsContainer = document.getElementById("modal-weights");
+    weightsContainer.innerHTML = "";
+    const table = document.createElement("table");
+    table.className = "weights-table";
+    table.innerHTML = `<thead><tr><th>Week</th><th>RPE</th><th>Weight</th></tr></thead>`;
+    const tbody = document.createElement("tbody");
+
+    workout.weeks.forEach((week, w) => {
+      const key = `pt_weight_${id}_w${w}_e${idx}`;
+      const row = document.createElement("tr");
+      if (w === activeWeek) row.classList.add("active-week");
+      row.innerHTML = `
+        <td>Week ${w + 1}</td>
+        <td>${week.rpe}</td>
+        <td><input class="weight-table-input" type="text" placeholder="—" value="${localStorage.getItem(key) || ""}" /></td>
+      `;
+      const input = row.querySelector("input");
+      input.addEventListener("input", (e) => {
+        localStorage.setItem(key, e.target.value);
+        // Sync to the main card if this is the active week
+        if (w === activeWeek) {
+          const cardInput = document.querySelector(`#exercise-list .exercise-card:nth-child(${idx + 1}) .weight-input`);
+          if (cardInput) cardInput.value = e.target.value;
+        }
+      });
+      tbody.appendChild(row);
     });
 
+    table.appendChild(tbody);
+    weightsContainer.appendChild(table);
 
     overlay.hidden = false;
     document.body.style.overflow = "hidden";
