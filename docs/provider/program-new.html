@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Provider — New Program</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <span class="label">Provider</span>
+      <h1>New Program</h1>
+    </div>
+  </header>
+
+  <main>
+    <form id="program-form">
+      <div class="form-section">
+        <label class="form-label" for="title">Program Title</label>
+        <input class="form-input" id="title" type="text" placeholder="e.g. 8-Week Strength Block" required />
+      </div>
+
+      <div class="form-row">
+        <div class="form-section">
+          <label class="form-label" for="num-weeks">Number of Weeks</label>
+          <input class="form-input" id="num-weeks" type="number" min="1" placeholder="e.g. 8" required />
+        </div>
+        <div class="form-section">
+          <label class="form-label" for="num-workouts">Workouts per Week</label>
+          <input class="form-input" id="num-workouts" type="number" min="1" placeholder="e.g. 3" required />
+        </div>
+      </div>
+
+      <button class="btn-save" type="submit" style="margin-top: 1.5rem;">Create Program</button>
+    </form>
+  </main>
+
+  <script src="program-new.js"></script>
+</body>
+</html>

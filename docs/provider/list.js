@@ -1,33 +1,32 @@
-const customWorkouts = JSON.parse(localStorage.getItem("pt_custom_workouts") || "[]");
-const hardcodedCount = workouts.length - customWorkouts.length;
+const programs = JSON.parse(localStorage.getItem("pt_programs") || "[]");
+const container = document.getElementById("program-list");
 
-const container = document.getElementById("workout-list");
-
-if (workouts.length === 0) {
-  container.innerHTML = `<p class="empty-state">No workouts yet.</p>`;
+if (programs.length === 0) {
+  container.innerHTML = `<p class="empty-state">No programs yet.</p>`;
 } else {
-  workouts.forEach((workout, idx) => {
-    const isCustom = idx >= hardcodedCount;
-    const customIdx = idx - hardcodedCount;
+  programs.forEach((program, idx) => {
+    const configured = program.workouts.filter(Boolean).length;
 
     const row = document.createElement("div");
-    row.className = "saved-row";
+    row.className = "saved-row saved-row--clickable";
     row.innerHTML = `
       <div class="saved-info">
-        <div class="saved-title">${workout.title || "Untitled"}</div>
-        <div class="saved-meta">${workout.date || "—"} · ${workout.weeks[0].exercises.length} exercises</div>
+        <div class="saved-title">${program.title || "Untitled"}</div>
+        <div class="saved-meta">${program.numWeeks} weeks · ${configured}/${program.workouts.length} workouts configured</div>
       </div>
-      ${isCustom ? `<button class="btn-delete" data-idx="${customIdx}">Delete</button>` : ""}
+      <button class="btn-delete">Delete</button>
     `;
 
-    if (isCustom) {
-      row.querySelector(".btn-delete").addEventListener("click", () => {
-        const custom = JSON.parse(localStorage.getItem("pt_custom_workouts") || "[]");
-        custom.splice(customIdx, 1);
-        localStorage.setItem("pt_custom_workouts", JSON.stringify(custom));
-        window.location.reload();
-      });
-    }
+    row.addEventListener("click", () => {
+      window.location.href = `program.html?idx=${idx}`;
+    });
+
+    row.querySelector(".btn-delete").addEventListener("click", (e) => {
+      e.stopPropagation();
+      programs.splice(idx, 1);
+      localStorage.setItem("pt_programs", JSON.stringify(programs));
+      window.location.reload();
+    });
 
     container.appendChild(row);
   });

@@ -9,10 +9,9 @@
 <body>
   <header>
     <div class="header-inner">
-      <a href="index.html" class="back-link">← All Workouts</a>
+      <a id="back-link" class="back-link">← Workouts</a>
       <span class="label">Workout</span>
       <h1 id="workout-title"></h1>
-      <p id="workout-meta"></p>
     </div>
   </header>
 
@@ -49,7 +48,6 @@
         <div class="exercise-number" id="modal-number"></div>
         <div class="exercise-info">
           <div class="exercise-name" id="modal-name"></div>
-          <div class="exercise-category" id="modal-category"></div>
         </div>
       </div>
 
@@ -60,9 +58,9 @@
         <div id="modal-weights"></div>
       </div>
 
-      <div class="modal-section">
+      <div class="modal-section" id="modal-notes-section">
         <label class="modal-label">Notes</label>
-        <p class="modal-notes">example note</p>
+        <p class="modal-notes" id="modal-notes"></p>
       </div>
 
       <div class="modal-section">
