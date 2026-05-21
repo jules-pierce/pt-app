@@ -15,17 +15,27 @@ if (!workout) {
   const exerciseRows = document.getElementById("exercise-rows");
 
   function addExerciseRow(ex = {}) {
-    const row = document.createElement("div");
-    row.className = "exercise-row";
-    row.innerHTML = `
-      <input class="form-input ex-name" type="text"   placeholder="Exercise name" value="${ex.name || ""}" required />
-      <input class="form-input ex-sets" type="number" placeholder="Sets"  min="1" value="${ex.sets || ""}" required />
-      <input class="form-input ex-reps" type="text"   placeholder="Reps"          value="${ex.reps || ""}" required />
-      <button type="button" class="btn-remove" aria-label="Remove exercise">✕</button>
-      <input class="form-input ex-note" type="text"   placeholder="Note (optional)" value="${ex.note || ""}" />
+    const card = document.createElement("div");
+    card.className = "exercise-row exercise-card-form";
+    card.innerHTML = `
+      <div class="exercise-card-form-header">
+        <input class="form-input ex-name" type="text" placeholder="Exercise name" value="${ex.name || ""}" required />
+        <button type="button" class="btn-remove" aria-label="Remove exercise">✕</button>
+      </div>
+      <div class="exercise-card-form-fields">
+        <div class="exercise-card-form-field">
+          <label class="form-label">Sets</label>
+          <input class="form-input ex-sets" type="number" placeholder="e.g. 3" min="1" value="${ex.sets || ""}" required />
+        </div>
+        <div class="exercise-card-form-field">
+          <label class="form-label">Reps</label>
+          <input class="form-input ex-reps" type="text" placeholder="e.g. 8" value="${ex.reps || ""}" required />
+        </div>
+      </div>
+      <input class="form-input ex-note" type="text" placeholder="Note (optional)" value="${ex.note || ""}" />
     `;
-    row.querySelector(".btn-remove").addEventListener("click", () => row.remove());
-    exerciseRows.appendChild(row);
+    card.querySelector(".btn-remove").addEventListener("click", () => card.remove());
+    exerciseRows.appendChild(card);
   }
 
   document.getElementById("add-exercise").addEventListener("click", () => addExerciseRow());

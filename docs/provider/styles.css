@@ -123,19 +123,40 @@ main {
   margin-top: 1.5rem;
 }
 
-/* ── Exercise rows ───────────────────────────────────────────────────────── */
-#exercise-rows { display: flex; flex-direction: column; gap: 0.6rem; }
+/* ── Exercise cards (form) ───────────────────────────────────────────────── */
+#exercise-rows { display: flex; flex-direction: column; gap: 0.75rem; }
 
-.exercise-row {
-  display: grid;
-  grid-template-columns: 2fr 5rem 5rem 2rem;
-  grid-template-rows: auto auto;
+.exercise-card-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.exercise-card-form-header {
+  display: flex;
   gap: 0.5rem;
   align-items: center;
 }
 
-.ex-note {
-  grid-column: 1 / 5;
+.exercise-card-form-header .form-input {
+  flex: 1;
+  font-weight: 600;
+}
+
+.exercise-card-form-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.exercise-card-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
 .btn-remove {
@@ -271,9 +292,3 @@ main {
 }
 .back-link:hover { opacity: 1; }
 
-/* ── Responsive ──────────────────────────────────────────────────────────── */
-@media (max-width: 540px) {
-  .exercise-row { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
-  .ex-name { grid-column: 1 / 4; }
-  .btn-remove  { grid-column: 2; justify-self: end; }
-}
