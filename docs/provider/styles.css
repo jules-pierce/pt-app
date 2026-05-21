@@ -2,15 +2,27 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0f1117;
-  --surface: #1a1d27;
-  --surface-2: #22263a;
-  --accent: #6c63ff;
-  --accent-light: #9d97ff;
-  --text: #e8eaf0;
-  --text-muted: #7a7f9a;
-  --border: #2c3050;
-  --red: #e05c7a;
+  /* Open Color dark palette (not in v1.x — defined here) */
+  --oc-dark-0: #C1C2C5;
+  --oc-dark-1: #A6A7AB;
+  --oc-dark-2: #909296;
+  --oc-dark-3: #5C5F66;
+  --oc-dark-4: #373A40;
+  --oc-dark-5: #2C2E33;
+  --oc-dark-6: #25262B;
+  --oc-dark-7: #1A1B1E;
+  --oc-dark-8: #141517;
+  --oc-dark-9: #101113;
+
+  --bg:           var(--oc-dark-9);
+  --surface:      var(--oc-dark-7);
+  --surface-2:    var(--oc-dark-5);
+  --accent:       var(--oc-violet-5);
+  --accent-light: var(--oc-violet-3);
+  --text:         var(--oc-gray-1);
+  --text-muted:   var(--oc-dark-2);
+  --border:       var(--oc-dark-4);
+  --red:          var(--oc-pink-5);
   --radius: 12px;
   --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
@@ -28,7 +40,7 @@ body {
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
 header {
-  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+  background: linear-gradient(135deg, var(--oc-dark-7) 0%, var(--oc-violet-9) 50%, var(--oc-dark-7) 100%);
   border-bottom: 1px solid var(--border);
   padding: 2.5rem 1.5rem 2rem;
   text-align: center;
@@ -38,7 +50,7 @@ header {
 
 .label {
   display: inline-block;
-  background: rgba(108, 99, 255, 0.25);
+  background: rgba(132, 94, 247, 0.25);
   color: var(--accent-light);
   font-size: 0.7rem;
   font-weight: 700;
@@ -46,7 +58,7 @@ header {
   text-transform: uppercase;
   padding: 0.3rem 0.75rem;
   border-radius: 999px;
-  border: 1px solid rgba(108, 99, 255, 0.4);
+  border: 1px solid rgba(132, 94, 247, 0.4);
   margin-bottom: 0.75rem;
 }
 
@@ -75,7 +87,7 @@ main {
 }
 
 /* ── Form ────────────────────────────────────────────────────────────────── */
-#workout-form {
+#workout-form, #program-form {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -201,12 +213,6 @@ main {
 .btn-save:hover { opacity: 0.85; }
 
 /* ── Saved list ──────────────────────────────────────────────────────────── */
-.saved-heading {
-  font-size: 1rem;
-  font-weight: 700;
-  margin-bottom: 0.75rem;
-}
-
 .saved-row {
   display: flex;
   align-items: center;
@@ -262,7 +268,7 @@ main {
 
 .empty-state { color: var(--text-muted); font-size: 0.9rem; }
 
-/* ── Add Workout button (list page) ──────────────────────────────────────── */
+/* ── Add Program button (list page) ─────────────────────────────────────── */
 .btn-add-workout {
   display: block;
   text-align: center;
@@ -291,4 +297,3 @@ main {
   transition: opacity 0.15s;
 }
 .back-link:hover { opacity: 1; }
-
