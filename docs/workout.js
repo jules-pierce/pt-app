@@ -38,6 +38,47 @@ if (!workout) {
     });
   }
 
+  // ── Modal ──────────────────────────────────────────────────────────────────
+  const overlay    = document.getElementById("modal-overlay");
+  const modalClose = document.getElementById("modal-close");
+
+
+  function openModal(exercise, idx) {
+    const weightKey = `pt_weight_${id}_w${activeWeek}_e${idx}`;
+
+    document.getElementById("modal-number").textContent   = idx + 1;
+    document.getElementById("modal-name").textContent     = exercise.name;
+    document.getElementById("modal-category").textContent = exercise.category;
+
+    const savedWeight = localStorage.getItem(weightKey) || "";
+    document.getElementById("modal-prescription").innerHTML = `
+      <span class="pill">${exercise.sets} sets</span>
+      <span class="pill">${exercise.reps} reps</span>
+      <input class="pill weight-input" type="text" placeholder="weight" value="${savedWeight}" aria-label="Weight" />
+    `;
+
+    // Keep modal weight in sync with the card
+    const modalWeightInput = document.getElementById("modal-prescription").querySelector(".weight-input");
+    modalWeightInput.addEventListener("input", (e) => {
+      localStorage.setItem(weightKey, e.target.value);
+      const cardInput = document.querySelector(`#exercise-list .exercise-card:nth-child(${idx + 1}) .weight-input`);
+      if (cardInput) cardInput.value = e.target.value;
+    });
+
+
+    overlay.hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal() {
+    overlay.hidden = true;
+    document.body.style.overflow = "";
+  }
+
+  modalClose.addEventListener("click", closeModal);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+
   // ── Exercises ──────────────────────────────────────────────────────────────
   function renderExercises() {
     const exercises = workout.weeks[activeWeek].exercises;
@@ -51,11 +92,12 @@ if (!workout) {
     list.innerHTML = "";
 
     exercises.forEach((exercise, idx) => {
-      const storageKey = `pt_weight_${id}_w${activeWeek}_e${idx}`;
-      const savedWeight = localStorage.getItem(storageKey) || "";
+      const weightKey = `pt_weight_${id}_w${activeWeek}_e${idx}`;
+      const savedWeight = localStorage.getItem(weightKey) || "";
 
       const card = document.createElement("div");
       card.className = "exercise-card";
+      card.style.cursor = "pointer";
       card.innerHTML = `
         <div class="exercise-header">
           <div class="exercise-number">${idx + 1}</div>
@@ -77,10 +119,14 @@ if (!workout) {
         </div>
       `;
 
-      card.querySelector(".weight-input").addEventListener("input", (e) => {
-        localStorage.setItem(storageKey, e.target.value);
+      const weightInput = card.querySelector(".weight-input");
+      weightInput.addEventListener("input", (e) => {
+        localStorage.setItem(weightKey, e.target.value);
       });
+      // Don't open modal when interacting with the weight input
+      weightInput.addEventListener("click", (e) => e.stopPropagation());
 
+      card.addEventListener("click", () => openModal(exercise, idx));
       list.appendChild(card);
     });
   }

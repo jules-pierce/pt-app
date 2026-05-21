@@ -41,6 +41,32 @@
     <div class="exercise-list" id="exercise-list"></div>
   </main>
 
+  <div class="modal-overlay" id="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
+
+      <div class="modal-header">
+        <div class="exercise-number" id="modal-number"></div>
+        <div class="exercise-info">
+          <div class="exercise-name" id="modal-name"></div>
+          <div class="exercise-category" id="modal-category"></div>
+        </div>
+      </div>
+
+      <div class="modal-prescription" id="modal-prescription"></div>
+
+      <div class="modal-section">
+        <label class="modal-label">Notes</label>
+        <p class="modal-notes">example note</p>
+      </div>
+
+      <div class="modal-section">
+        <label class="modal-label">Video</label>
+        <video class="modal-video" src="videos/video.MOV" controls playsinline></video>
+      </div>
+    </div>
+  </div>
+
   <footer>
     <p>Built with <span>♥</span> for the grind</p>
   </footer>
