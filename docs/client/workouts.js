@@ -45,3 +45,7 @@ const workouts = [
     ]),
   },
 ];
+
+// Append any workouts added via the provider
+const _custom = JSON.parse(localStorage.getItem("pt_custom_workouts") || "[]");
+workouts.push(..._custom);
