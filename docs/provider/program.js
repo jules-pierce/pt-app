@@ -1,18 +1,41 @@
-const params  = new URLSearchParams(window.location.search);
-const progIdx = parseInt(params.get("idx"), 10);
-const programs = JSON.parse(localStorage.getItem("pt_programs") || "[]");
-const program  = programs[progIdx];
+import { auth, db } from "../firebase-config.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { addSignOutButton } from "../auth-helpers.js";
 
-if (!program) {
-  document.querySelector("main").innerHTML = `<p class="empty-state">Program not found.</p>`;
-} else {
+const params    = new URLSearchParams(window.location.search);
+const programId = params.get("id");
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "../login.html"; return; }
+  addSignOutButton();
+
+  const programSnap = await getDoc(doc(db, "programs", programId));
+  if (!programSnap.exists()) {
+    document.querySelector("main").innerHTML = `<p class="empty-state">Program not found.</p>`;
+    return;
+  }
+
+  const program = programSnap.data();
   document.getElementById("program-title").textContent = program.title;
-  document.getElementById("program-meta").textContent =
-    `${program.numWeeks} weeks · ${program.workouts.length} workouts`;
+  document.getElementById("program-meta").textContent  =
+    `${program.numWeeks} weeks · ${program.workoutSlots.length} workouts`;
+
+  const slots = program.workoutSlots || [];
+
+  // Fetch all configured workout docs in parallel
+  const workoutDocs = {};
+  await Promise.all(
+    slots.filter(Boolean).map(async (wId) => {
+      const snap = await getDoc(doc(db, "programs", programId, "workouts", wId));
+      if (snap.exists()) workoutDocs[wId] = snap.data();
+    })
+  );
 
   const container = document.getElementById("workout-slots");
 
-  program.workouts.forEach((workout, slotIdx) => {
+  slots.forEach((workoutId, slotIdx) => {
+    const workout = workoutId ? workoutDocs[workoutId] : null;
     const row = document.createElement("div");
     row.className = "saved-row saved-row--clickable";
 
@@ -27,10 +50,9 @@ if (!program) {
         <span class="slot-arrow">→</span>
       `;
       row.addEventListener("click", () => {
-        window.location.href = `edit.html?program=${progIdx}&slot=${slotIdx}`;
+        window.location.href = `edit.html?program=${programId}&workout=${workoutId}`;
       });
     } else {
-      row.className += " saved-row--empty";
       row.innerHTML = `
         <div class="saved-info">
           <div class="slot-label">Workout ${slotIdx + 1}</div>
@@ -39,10 +61,10 @@ if (!program) {
         <span class="slot-arrow">+</span>
       `;
       row.addEventListener("click", () => {
-        window.location.href = `add.html?program=${progIdx}&slot=${slotIdx}`;
+        window.location.href = `add.html?program=${programId}&slot=${slotIdx}`;
       });
     }
 
     container.appendChild(row);
   });
-}
+});

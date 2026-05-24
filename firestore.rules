@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Any signed-in user can read user docs (needed for provider → client email lookup).
+    // Only the owner can write their own doc.
+    match /users/{userId} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth.uid == userId;
+    }
+
+    match /programs/{programId} {
+      // Client or provider of this program can read it.
+      allow read: if request.auth != null && (
+        resource.data.clientId   == request.auth.uid ||
+        resource.data.providerId == request.auth.uid
+      );
+      // Only a provider can create programs (and must set themselves as providerId).
+      allow create: if request.auth != null &&
+        request.resource.data.providerId == request.auth.uid;
+      // Only the provider who owns the program can update or delete it.
+      allow update, delete: if request.auth != null &&
+        resource.data.providerId == request.auth.uid;
+
+      match /workouts/{workoutId} {
+        allow read: if request.auth != null && (
+          get(/databases/$(database)/documents/programs/$(programId)).data.clientId   == request.auth.uid ||
+          get(/databases/$(database)/documents/programs/$(programId)).data.providerId == request.auth.uid
+        );
+        allow write: if request.auth != null &&
+          get(/databases/$(database)/documents/programs/$(programId)).data.providerId == request.auth.uid;
+      }
+    }
+
+    // Weight logs are private to the client who owns them.
+    match /users/{userId}/workoutWeights/{weightId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+  }
+}

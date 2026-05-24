@@ -1,15 +1,43 @@
-const params  = new URLSearchParams(window.location.search);
-const progIdx = parseInt(params.get("idx"), 10);
-const program = programs[progIdx];
+import { auth, db } from "../firebase-config.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { addSignOutButton } from "../auth-helpers.js";
 
-if (!program) {
-  document.getElementById("program-title").textContent = "Program not found";
-} else {
+const params    = new URLSearchParams(window.location.search);
+const programId = params.get("id");
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "../login.html"; return; }
+  addSignOutButton();
+
+  const programSnap = await getDoc(doc(db, "programs", programId));
+  if (!programSnap.exists()) {
+    document.getElementById("program-title").textContent = "Program not found";
+    return;
+  }
+
+  const program = programSnap.data();
   document.getElementById("program-title").textContent = program.title;
 
   const list = document.getElementById("workout-list");
+  list.innerHTML = `<p style="color:var(--text-muted);font-size:0.9rem;">Loading…</p>`;
 
-  program.workouts.forEach((workout, workoutIdx) => {
+  const slots      = program.workoutSlots || [];
+  const workoutIds = slots.filter(Boolean);
+
+  // Fetch all configured workout docs in parallel
+  const workoutDocs = {};
+  await Promise.all(
+    workoutIds.map(async (wId) => {
+      const snap = await getDoc(doc(db, "programs", programId, "workouts", wId));
+      if (snap.exists()) workoutDocs[wId] = snap.data();
+    })
+  );
+
+  list.innerHTML = "";
+  slots.forEach((workoutId) => {
+    if (!workoutId) return;
+    const workout = workoutDocs[workoutId];
     if (!workout) return;
 
     const totalSets = workout.weeks[0].exercises.reduce((sum, ex) => sum + ex.sets, 0);
@@ -17,7 +45,7 @@ if (!program) {
 
     const card = document.createElement("a");
     card.className = "workout-card";
-    card.href = `workout.html?program=${progIdx}&workout=${workoutIdx}`;
+    card.href      = `workout.html?program=${programId}&workout=${workoutId}`;
     card.innerHTML = `
       <div class="workout-card-inner">
         <div class="workout-card-info">
@@ -33,4 +61,8 @@ if (!program) {
     `;
     list.appendChild(card);
   });
-}
+
+  if (list.children.length === 0) {
+    list.innerHTML = `<p style="color:var(--text-muted);font-size:0.9rem;">No workouts configured yet.</p>`;
+  }
+});

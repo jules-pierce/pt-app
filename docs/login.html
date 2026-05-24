@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — Swolie</title>
+  <link rel="stylesheet" href="open-color.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --oc-dark-4: #373A40;
+      --oc-dark-7: #1A1B1E;
+      --oc-dark-9: #101113;
+    }
+    body {
+      background: var(--oc-dark-9);
+      color: var(--oc-gray-1);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .card {
+      background: var(--oc-dark-7);
+      border: 1px solid var(--oc-dark-4);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 400px;
+    }
+    h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--oc-gray-6); font-size: 0.875rem; margin-bottom: 2rem; }
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--oc-gray-5);
+      margin-bottom: 0.4rem;
+    }
+    input[type="email"],
+    input[type="password"] {
+      display: block;
+      width: 100%;
+      background: var(--oc-dark-9);
+      border: 1px solid var(--oc-dark-4);
+      border-radius: 8px;
+      color: var(--oc-gray-1);
+      font-size: 0.95rem;
+      padding: 0.7rem 0.9rem;
+      margin-bottom: 1.25rem;
+      font-family: inherit;
+    }
+    input:focus { outline: none; border-color: var(--oc-violet-5); }
+    .role-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .role-option {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--oc-dark-9);
+      border: 1px solid var(--oc-dark-4);
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .role-option input[type="radio"] { accent-color: var(--oc-violet-5); }
+    .btn-submit {
+      width: 100%;
+      background: var(--oc-violet-5);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 0.8rem;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 0.25rem;
+    }
+    .btn-submit:hover { opacity: 0.85; }
+    .toggle-link {
+      display: block;
+      text-align: center;
+      margin-top: 1.25rem;
+      color: var(--oc-violet-3);
+      font-size: 0.875rem;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: inherit;
+      text-decoration: underline;
+    }
+    .error {
+      color: var(--oc-pink-5);
+      font-size: 0.85rem;
+      margin-top: 0.75rem;
+      display: none;
+    }
+    #signup-section { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Swolie</h1>
+
+    <!-- Sign In -->
+    <section id="signin-section">
+      <p class="subtitle">Sign in to continue</p>
+      <form id="signin-form">
+        <label for="signin-email">Email</label>
+        <input id="signin-email" type="email" required autocomplete="email" />
+        <label for="signin-password">Password</label>
+        <input id="signin-password" type="password" required autocomplete="current-password" />
+        <button class="btn-submit" type="submit">Sign In</button>
+        <p class="error" id="signin-error"></p>
+      </form>
+      <button class="toggle-link" id="show-signup">Create an account</button>
+    </section>
+
+    <!-- Create Account -->
+    <section id="signup-section">
+      <p class="subtitle">Create your account</p>
+      <form id="signup-form">
+        <label for="signup-email">Email</label>
+        <input id="signup-email" type="email" required autocomplete="email" />
+        <label for="signup-password">Password</label>
+        <input id="signup-password" type="password" required autocomplete="new-password" />
+        <label>I am a…</label>
+        <div class="role-row">
+          <label class="role-option">
+            <input type="radio" name="role" value="client" checked /> Client
+          </label>
+          <label class="role-option">
+            <input type="radio" name="role" value="provider" /> Provider
+          </label>
+        </div>
+        <button class="btn-submit" type="submit">Create Account</button>
+        <p class="error" id="signup-error"></p>
+      </form>
+      <button class="toggle-link" id="show-signin">Already have an account? Sign in</button>
+    </section>
+  </div>
+
+  <script type="module" src="login.js"></script>
+</body>
+</html>

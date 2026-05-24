@@ -1,14 +1,33 @@
+import { auth, db } from "../firebase-config.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { addSignOutButton } from "../auth-helpers.js";
+
 const list = document.getElementById("workout-list");
 
-if (programs.length === 0) {
-  list.innerHTML = `<p style="color:var(--text-muted);font-size:0.9rem;">No programs yet.</p>`;
-} else {
-  programs.forEach((program, idx) => {
-    const workoutCount = program.workouts.filter(Boolean).length;
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "../login.html"; return; }
+  addSignOutButton();
+
+  list.innerHTML = `<p style="color:var(--text-muted);font-size:0.9rem;">Loading…</p>`;
+
+  const q        = query(collection(db, "programs"), where("clientId", "==", user.uid));
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    list.innerHTML = `<p style="color:var(--text-muted);font-size:0.9rem;">No programs yet.</p>`;
+    return;
+  }
+
+  list.innerHTML = "";
+  snapshot.forEach((docSnap) => {
+    const program    = docSnap.data();
+    const programId  = docSnap.id;
+    const configured = (program.workoutSlots || []).filter(Boolean).length;
 
     const card = document.createElement("a");
     card.className = "workout-card";
-    card.href = `program.html?idx=${idx}`;
+    card.href      = `program.html?id=${programId}`;
     card.innerHTML = `
       <div class="workout-card-inner">
         <div class="workout-card-info">
@@ -16,11 +35,11 @@ if (programs.length === 0) {
         </div>
         <div class="workout-card-meta">
           <span>${program.numWeeks} weeks</span>
-          <span>${workoutCount} workouts</span>
+          <span>${configured} workouts</span>
           <span class="workout-card-arrow">→</span>
         </div>
       </div>
     `;
     list.appendChild(card);
   });
-}
+});

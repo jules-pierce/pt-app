@@ -1,18 +1,27 @@
-const params  = new URLSearchParams(window.location.search);
-const progIdx = parseInt(params.get("program"), 10);
-const slotIdx = parseInt(params.get("slot"), 10);
+import { auth, db } from "../firebase-config.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { addSignOutButton } from "../auth-helpers.js";
 
-const programs = JSON.parse(localStorage.getItem("pt_programs") || "[]");
-const program  = programs[progIdx];
-const workout  = program?.workouts?.[slotIdx];
+const params     = new URLSearchParams(window.location.search);
+const programId  = params.get("program");
+const workoutId  = params.get("workout");
 
-if (!workout) {
-  document.querySelector("main").innerHTML = `<p class="empty-state">Workout not found.</p>`;
-} else {
+const exerciseRows = document.getElementById("exercise-rows");
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "../login.html"; return; }
+  addSignOutButton();
+
+  const workoutSnap = await getDoc(doc(db, "programs", programId, "workouts", workoutId));
+  if (!workoutSnap.exists()) {
+    document.querySelector("main").innerHTML = `<p class="empty-state">Workout not found.</p>`;
+    return;
+  }
+
+  const workout = workoutSnap.data();
   document.getElementById("title").value = workout.title || "";
   document.getElementById("notes").value = workout.notes || "";
-
-  const exerciseRows = document.getElementById("exercise-rows");
 
   function addExerciseRow(ex = {}) {
     const card = document.createElement("div");
@@ -42,8 +51,11 @@ if (!workout) {
 
   workout.weeks[0].exercises.forEach((ex) => addExerciseRow(ex));
 
-  document.getElementById("workout-form").addEventListener("submit", (e) => {
+  document.getElementById("workout-form").addEventListener("submit", async (e) => {
     e.preventDefault();
+    const submitBtn = e.target.querySelector(".btn-save");
+    submitBtn.disabled    = true;
+    submitBtn.textContent = "Saving…";
 
     const exercises = [...exerciseRows.querySelectorAll(".exercise-row")].map((row) => ({
       name: row.querySelector(".ex-name").value.trim(),
@@ -52,15 +64,15 @@ if (!workout) {
       note: row.querySelector(".ex-note").value.trim(),
     }));
 
-    // Preserve per-week RPE, update exercises on all weeks
-    programs[progIdx].workouts[slotIdx] = {
-      ...workout,
+    // Preserve per-week RPE, update exercises across all weeks
+    const weeks = workout.weeks.map((week) => ({ ...week, exercises }));
+
+    await updateDoc(doc(db, "programs", programId, "workouts", workoutId), {
       title: document.getElementById("title").value.trim(),
       notes: document.getElementById("notes").value.trim(),
-      weeks: workout.weeks.map((week) => ({ ...week, exercises })),
-    };
+      weeks,
+    });
 
-    localStorage.setItem("pt_programs", JSON.stringify(programs));
-    window.location.href = `program.html?idx=${progIdx}`;
+    window.location.href = `program.html?id=${programId}`;
   });
-}
+});

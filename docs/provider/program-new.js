@@ -1,17 +1,45 @@
-document.getElementById("program-form").addEventListener("submit", (e) => {
-  e.preventDefault();
+import { auth, db } from "../firebase-config.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { collection, addDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { addSignOutButton } from "../auth-helpers.js";
 
-  const numWorkouts = parseInt(document.getElementById("num-workouts").value, 10);
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "../login.html"; return; }
+  addSignOutButton();
 
-  const program = {
-    title:    document.getElementById("title").value.trim(),
-    numWeeks: parseInt(document.getElementById("num-weeks").value, 10),
-    workouts: Array(numWorkouts).fill(null),
-  };
+  document.getElementById("program-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = e.target.querySelector(".btn-save");
+    submitBtn.disabled    = true;
+    submitBtn.textContent = "Creating…";
 
-  const programs = JSON.parse(localStorage.getItem("pt_programs") || "[]");
-  programs.push(program);
-  localStorage.setItem("pt_programs", JSON.stringify(programs));
+    const clientEmail = document.getElementById("client-email").value.trim();
+    const numWorkouts = parseInt(document.getElementById("num-workouts").value, 10);
+    const numWeeks    = parseInt(document.getElementById("num-weeks").value, 10);
 
-  window.location.href = `program.html?idx=${programs.length - 1}`;
+    // Look up the client by email
+    const usersSnap = await getDocs(
+      query(collection(db, "users"), where("email", "==", clientEmail))
+    );
+
+    if (usersSnap.empty) {
+      alert(`No account found for "${clientEmail}". Ask the client to sign in once first.`);
+      submitBtn.disabled    = false;
+      submitBtn.textContent = "Create Program";
+      return;
+    }
+
+    const clientId = usersSnap.docs[0].id;
+
+    const programRef = await addDoc(collection(db, "programs"), {
+      title:        document.getElementById("title").value.trim(),
+      numWeeks,
+      workoutSlots: Array(numWorkouts).fill(null),
+      clientId,
+      providerId:   user.uid,
+      createdAt:    serverTimestamp(),
+    });
+
+    window.location.href = `program.html?id=${programRef.id}`;
+  });
 });

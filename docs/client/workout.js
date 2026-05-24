@@ -1,15 +1,33 @@
-// ── Load workout by ?program= and ?workout= params ────────────────────────────
-const params      = new URLSearchParams(window.location.search);
-const progIdx     = parseInt(params.get("program"), 10);
-const workoutIdx  = parseInt(params.get("workout"), 10);
-const workout     = programs[progIdx]?.workouts[workoutIdx];
+import { auth, db } from "../firebase-config.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { addSignOutButton } from "../auth-helpers.js";
 
-// Back link
-document.getElementById("back-link").href = `program.html?idx=${progIdx}`;
+const params    = new URLSearchParams(window.location.search);
+const programId = params.get("program");
+const workoutId = params.get("workout");
 
-if (!workout) {
-  document.getElementById("workout-title").textContent = "Workout not found";
-} else {
+document.getElementById("back-link").href = `program.html?id=${programId}`;
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "../login.html"; return; }
+  addSignOutButton();
+
+  // Load workout data and saved weights in parallel
+  const [workoutSnap, weightsSnap] = await Promise.all([
+    getDoc(doc(db, "programs", programId, "workouts", workoutId)),
+    getDoc(doc(db, "users", user.uid, "workoutWeights", `${programId}_${workoutId}`)),
+  ]);
+
+  if (!workoutSnap.exists()) {
+    document.getElementById("workout-title").textContent = "Workout not found";
+    return;
+  }
+
+  const workout = workoutSnap.data();
+  // weights are keyed by "${weekIndex}_${exerciseIndex}"
+  const weights = weightsSnap.exists() ? weightsSnap.data() : {};
+
   document.getElementById("workout-title").textContent = workout.title;
 
   if (workout.notes) {
@@ -18,17 +36,28 @@ if (!workout) {
     document.getElementById("workout-notes-section").style.display = "none";
   }
 
+  // ── Weight persistence ─────────────────────────────────────────────────────
+  const weightsRef = doc(db, "users", user.uid, "workoutWeights", `${programId}_${workoutId}`);
+
+  async function saveWeight(weekIdx, exIdx, value) {
+    weights[`${weekIdx}_${exIdx}`] = value;
+    await setDoc(weightsRef, { [`${weekIdx}_${exIdx}`]: value }, { merge: true });
+  }
+
   // ── Week tabs ──────────────────────────────────────────────────────────────
-  let activeWeek = Math.max(0, Math.min(parseInt(params.get("week") || "0", 10), workout.weeks.length - 1));
+  let activeWeek = Math.max(
+    0,
+    Math.min(parseInt(params.get("week") || "0", 10), workout.weeks.length - 1)
+  );
 
   const tabNav = document.getElementById("week-tabs");
 
   function renderTabs() {
     tabNav.innerHTML = "";
-    workout.weeks.forEach((_, i) => {
+    workout.weeks.forEach((week, i) => {
       const btn = document.createElement("button");
       btn.className = "week-tab" + (i === activeWeek ? " active" : "");
-      btn.innerHTML = `Week ${i + 1} <span class="tab-rpe">RPE ${workout.weeks[i].rpe}</span>`;
+      btn.innerHTML = `Week ${i + 1} <span class="tab-rpe">RPE ${week.rpe}</span>`;
       btn.addEventListener("click", () => {
         activeWeek = i;
         const url = new URL(window.location);
@@ -46,16 +75,14 @@ if (!workout) {
   const modalClose = document.getElementById("modal-close");
 
   function openModal(exercise, exIdx) {
-    const weightKey = `pt_weight_p${progIdx}_wo${workoutIdx}_wk${activeWeek}_e${exIdx}`;
-
     document.getElementById("modal-number").textContent = exIdx + 1;
     document.getElementById("modal-name").textContent   = exercise.name;
 
     const notesSection = document.getElementById("modal-notes-section");
     const notesEl      = document.getElementById("modal-notes");
     if (exercise.note) {
-      notesEl.textContent    = exercise.note;
-      notesSection.hidden    = false;
+      notesEl.textContent = exercise.note;
+      notesSection.hidden = false;
     } else {
       notesSection.hidden = true;
     }
@@ -65,7 +92,7 @@ if (!workout) {
       <span class="pill">${exercise.reps} reps</span>
     `;
 
-    // ── Weights table ────────────────────────────────────────────────────────
+    // Weights table across all weeks
     const weightsContainer = document.getElementById("modal-weights");
     weightsContainer.innerHTML = "";
     const table = document.createElement("table");
@@ -74,20 +101,23 @@ if (!workout) {
     const tbody = document.createElement("tbody");
 
     workout.weeks.forEach((week, w) => {
-      const key = `pt_weight_p${progIdx}_wo${workoutIdx}_wk${w}_e${exIdx}`;
-      const row = document.createElement("tr");
+      const saved = weights[`${w}_${exIdx}`] || "";
+      const row   = document.createElement("tr");
       if (w === activeWeek) row.classList.add("active-week");
       row.innerHTML = `
         <td>Week ${w + 1}</td>
         <td>${week.rpe}</td>
-        <td><input class="weight-table-input" type="text" placeholder="—" value="${localStorage.getItem(key) || ""}" /></td>
+        <td><input class="weight-table-input" type="text" placeholder="—" value="${saved}" /></td>
       `;
       const input = row.querySelector("input");
-      input.addEventListener("input", (e) => {
-        localStorage.setItem(key, e.target.value);
+      input.addEventListener("blur", async (e) => {
+        const val = e.target.value;
+        await saveWeight(w, exIdx, val);
         if (w === activeWeek) {
-          const cardInput = document.querySelector(`#exercise-list .exercise-card:nth-child(${exIdx + 1}) .weight-input`);
-          if (cardInput) cardInput.value = e.target.value;
+          const cardInput = document.querySelector(
+            `#exercise-list .exercise-card:nth-child(${exIdx + 1}) .weight-input`
+          );
+          if (cardInput) cardInput.value = val;
         }
       });
       tbody.appendChild(row);
@@ -122,8 +152,7 @@ if (!workout) {
     list.innerHTML = "";
 
     exercises.forEach((exercise, exIdx) => {
-      const weightKey   = `pt_weight_p${progIdx}_wo${workoutIdx}_wk${activeWeek}_e${exIdx}`;
-      const savedWeight = localStorage.getItem(weightKey) || "";
+      const savedWeight = weights[`${activeWeek}_${exIdx}`] || "";
 
       const card = document.createElement("div");
       card.className    = "exercise-card";
@@ -149,11 +178,10 @@ if (!workout) {
       `;
 
       const weightInput = card.querySelector(".weight-input");
-      weightInput.addEventListener("input", (e) => {
-        localStorage.setItem(weightKey, e.target.value);
+      weightInput.addEventListener("blur", async (e) => {
+        await saveWeight(activeWeek, exIdx, e.target.value);
       });
       weightInput.addEventListener("click", (e) => e.stopPropagation());
-
       card.addEventListener("click", () => openModal(exercise, exIdx));
       list.appendChild(card);
     });
@@ -161,4 +189,4 @@ if (!workout) {
 
   renderTabs();
   renderExercises();
-}
+});

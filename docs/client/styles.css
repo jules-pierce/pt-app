@@ -273,6 +273,22 @@ main {
 }
 .back-link:hover { opacity: 1; }
 
+/* ── Sign out button ─────────────────────────────────────────────────────── */
+.btn-signout {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+  margin-top: 0.75rem;
+  transition: color 0.15s, border-color 0.15s;
+}
+.btn-signout:hover { color: var(--red); border-color: var(--red); }
+
 /* ── Workout List ────────────────────────────────────────────────────────── */
 .workout-list {
   display: flex;

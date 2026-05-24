@@ -1,11 +1,13 @@
-const params  = new URLSearchParams(window.location.search);
-const progIdx = parseInt(params.get("program"), 10);
-const slotIdx = parseInt(params.get("slot"), 10);
+import { auth, db } from "../firebase-config.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { doc, getDoc, addDoc, updateDoc, collection } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { addSignOutButton } from "../auth-helpers.js";
 
-const programs = JSON.parse(localStorage.getItem("pt_programs") || "[]");
-const program  = programs[progIdx];
+const params    = new URLSearchParams(window.location.search);
+const programId = params.get("program");
+const slotIdx   = parseInt(params.get("slot"), 10);
 
-// ── Exercise cards ────────────────────────────────────────────────────────────
+// ── Exercise card builder ─────────────────────────────────────────────────────
 const exerciseRows = document.getElementById("exercise-rows");
 
 function addExerciseRow(ex = {}) {
@@ -34,30 +36,50 @@ function addExerciseRow(ex = {}) {
 
 document.getElementById("add-exercise").addEventListener("click", () => addExerciseRow());
 
-// ── Form submit ───────────────────────────────────────────────────────────────
-document.getElementById("workout-form").addEventListener("submit", (e) => {
-  e.preventDefault();
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "../login.html"; return; }
+  addSignOutButton();
 
-  const exercises = [...exerciseRows.querySelectorAll(".exercise-row")].map((row) => ({
-    name: row.querySelector(".ex-name").value.trim(),
-    sets: parseInt(row.querySelector(".ex-sets").value, 10),
-    reps: row.querySelector(".ex-reps").value.trim(),
-    note: row.querySelector(".ex-note").value.trim(),
-  }));
+  const programSnap = await getDoc(doc(db, "programs", programId));
+  if (!programSnap.exists()) return;
+  const program = programSnap.data();
 
-  if (exercises.length === 0) return;
+  document.getElementById("workout-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = e.target.querySelector(".btn-save");
+    submitBtn.disabled    = true;
+    submitBtn.textContent = "Saving…";
 
-  const weeks = Array.from({ length: program.numWeeks }, (_, i) => ({
-    rpe: 5 + i,
-    exercises,
-  }));
+    const exercises = [...exerciseRows.querySelectorAll(".exercise-row")].map((row) => ({
+      name: row.querySelector(".ex-name").value.trim(),
+      sets: parseInt(row.querySelector(".ex-sets").value, 10),
+      reps: row.querySelector(".ex-reps").value.trim(),
+      note: row.querySelector(".ex-note").value.trim(),
+    }));
 
-  programs[progIdx].workouts[slotIdx] = {
-    title: document.getElementById("title").value.trim(),
-    notes: document.getElementById("notes").value.trim(),
-    weeks,
-  };
+    if (exercises.length === 0) {
+      submitBtn.disabled    = false;
+      submitBtn.textContent = "Save Workout";
+      return;
+    }
 
-  localStorage.setItem("pt_programs", JSON.stringify(programs));
-  window.location.href = `program.html?idx=${progIdx}`;
+    const weeks = Array.from({ length: program.numWeeks }, (_, i) => ({
+      rpe: 5 + i,
+      exercises,
+    }));
+
+    // Create the workout document
+    const workoutRef = await addDoc(collection(db, "programs", programId, "workouts"), {
+      title: document.getElementById("title").value.trim(),
+      notes: document.getElementById("notes").value.trim(),
+      weeks,
+    });
+
+    // Update the program's workoutSlots array
+    const slots = [...(program.workoutSlots || [])];
+    slots[slotIdx] = workoutRef.id;
+    await updateDoc(doc(db, "programs", programId), { workoutSlots: slots });
+
+    window.location.href = `program.html?id=${programId}`;
+  });
 });
