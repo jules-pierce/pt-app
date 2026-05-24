@@ -3,16 +3,23 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/f
 import { collection, addDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { addSignOutButton } from "../auth-helpers.js";
 
-onAuthStateChanged(auth, async (user) => {
+let currentUser = null;
+
+onAuthStateChanged(auth, (user) => {
   if (!user) { window.location.href = "../login.html"; return; }
+  currentUser = user;
   addSignOutButton();
+});
 
-  document.getElementById("program-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const submitBtn = e.target.querySelector(".btn-save");
-    submitBtn.disabled    = true;
-    submitBtn.textContent = "Creating…";
+document.getElementById("program-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!currentUser) return;
 
+  const submitBtn = e.target.querySelector(".btn-save");
+  submitBtn.disabled    = true;
+  submitBtn.textContent = "Creating…";
+
+  try {
     const clientEmail = document.getElementById("client-email").value.trim();
     const numWorkouts = parseInt(document.getElementById("num-workouts").value, 10);
     const numWeeks    = parseInt(document.getElementById("num-weeks").value, 10);
@@ -36,10 +43,14 @@ onAuthStateChanged(auth, async (user) => {
       numWeeks,
       workoutSlots: Array(numWorkouts).fill(null),
       clientId,
-      providerId:   user.uid,
+      providerId:   currentUser.uid,
       createdAt:    serverTimestamp(),
     });
 
     window.location.href = `program.html?id=${programRef.id}`;
-  });
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+    submitBtn.disabled    = false;
+    submitBtn.textContent = "Create Program";
+  }
 });

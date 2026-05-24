@@ -7,6 +7,18 @@ const params    = new URLSearchParams(window.location.search);
 const programId = params.get("program");
 const slotIdx   = parseInt(params.get("slot"), 10);
 
+let currentUser = null;
+let program     = null;
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = "../login.html"; return; }
+  currentUser = user;
+  addSignOutButton();
+
+  const programSnap = await getDoc(doc(db, "programs", programId));
+  if (programSnap.exists()) program = programSnap.data();
+});
+
 // ── Exercise card builder ─────────────────────────────────────────────────────
 const exerciseRows = document.getElementById("exercise-rows");
 
@@ -36,20 +48,15 @@ function addExerciseRow(ex = {}) {
 
 document.getElementById("add-exercise").addEventListener("click", () => addExerciseRow());
 
-onAuthStateChanged(auth, async (user) => {
-  if (!user) { window.location.href = "../login.html"; return; }
-  addSignOutButton();
+document.getElementById("workout-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!currentUser || !program) return;
 
-  const programSnap = await getDoc(doc(db, "programs", programId));
-  if (!programSnap.exists()) return;
-  const program = programSnap.data();
+  const submitBtn = e.target.querySelector(".btn-save");
+  submitBtn.disabled    = true;
+  submitBtn.textContent = "Saving…";
 
-  document.getElementById("workout-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const submitBtn = e.target.querySelector(".btn-save");
-    submitBtn.disabled    = true;
-    submitBtn.textContent = "Saving…";
-
+  try {
     const exercises = [...exerciseRows.querySelectorAll(".exercise-row")].map((row) => ({
       name: row.querySelector(".ex-name").value.trim(),
       sets: parseInt(row.querySelector(".ex-sets").value, 10),
@@ -68,18 +75,20 @@ onAuthStateChanged(auth, async (user) => {
       exercises,
     }));
 
-    // Create the workout document
     const workoutRef = await addDoc(collection(db, "programs", programId, "workouts"), {
       title: document.getElementById("title").value.trim(),
       notes: document.getElementById("notes").value.trim(),
       weeks,
     });
 
-    // Update the program's workoutSlots array
     const slots = [...(program.workoutSlots || [])];
     slots[slotIdx] = workoutRef.id;
     await updateDoc(doc(db, "programs", programId), { workoutSlots: slots });
 
     window.location.href = `program.html?id=${programId}`;
-  });
+  } catch (err) {
+    alert(`Error: ${err.message}`);
+    submitBtn.disabled    = false;
+    submitBtn.textContent = "Save Workout";
+  }
 });
