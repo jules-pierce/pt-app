@@ -11,8 +11,8 @@ onAuthStateChanged(auth, async (user) => {
   addSignOutButton();
 
   const programSnap = await getDoc(doc(db, "programs", programId));
-  if (!programSnap.exists()) {
-    document.getElementById("program-title").textContent = "Program not found";
+  if (!programSnap.exists() || programSnap.data().clientId !== user.uid) {
+    window.location.href = "index.html";
     return;
   }
 

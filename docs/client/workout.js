@@ -13,14 +13,15 @@ onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = "../login.html"; return; }
   addSignOutButton();
 
-  // Load workout data and saved weights in parallel
-  const [workoutSnap, weightsSnap] = await Promise.all([
+  // Load workout data, saved weights, and parent program in parallel
+  const [workoutSnap, weightsSnap, programSnap] = await Promise.all([
     getDoc(doc(db, "programs", programId, "workouts", workoutId)),
     getDoc(doc(db, "users", user.uid, "workoutWeights", `${programId}_${workoutId}`)),
+    getDoc(doc(db, "programs", programId)),
   ]);
 
-  if (!workoutSnap.exists()) {
-    document.getElementById("workout-title").textContent = "Workout not found";
+  if (!workoutSnap.exists() || !programSnap.exists() || programSnap.data().clientId !== user.uid) {
+    window.location.href = "index.html";
     return;
   }
 
