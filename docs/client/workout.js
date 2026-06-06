@@ -1,6 +1,6 @@
 import { auth, db } from "../firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { addSignOutButton, checkRole } from "../auth-helpers.js";
 
 const params    = new URLSearchParams(window.location.search);
@@ -14,10 +14,10 @@ onAuthStateChanged(auth, async (user) => {
   addSignOutButton();
   if (!await checkRole(user, "client")) return;
 
-  // Load workout data, saved weights, and parent program in parallel
-  const [workoutSnap, weightsSnap, programSnap] = await Promise.all([
-    getDoc(doc(db, "programs", programId, "workouts", workoutId)),
-    getDoc(doc(db, "users", user.uid, "workoutWeights", `${programId}_${workoutId}`)),
+  // Load workout and parent program in parallel
+  const workoutRef = doc(db, "programs", programId, "workouts", workoutId);
+  const [workoutSnap, programSnap] = await Promise.all([
+    getDoc(workoutRef),
     getDoc(doc(db, "programs", programId)),
   ]);
 
@@ -27,8 +27,6 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   const workout = workoutSnap.data();
-  // weights are keyed by "${weekIndex}_${exerciseIndex}"
-  const weights = weightsSnap.exists() ? weightsSnap.data() : {};
 
   document.getElementById("workout-title").textContent = workout.title;
 
@@ -39,11 +37,9 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   // ── Weight persistence ─────────────────────────────────────────────────────
-  const weightsRef = doc(db, "users", user.uid, "workoutWeights", `${programId}_${workoutId}`);
-
   async function saveWeight(weekIdx, exIdx, value) {
-    weights[`${weekIdx}_${exIdx}`] = value;
-    await setDoc(weightsRef, { [`${weekIdx}_${exIdx}`]: value }, { merge: true });
+    workout.exercises[exIdx].weeks[weekIdx].weight = value;
+    await updateDoc(workoutRef, { exercises: workout.exercises });
   }
 
   // ── Week tabs ──────────────────────────────────────────────────────────────
@@ -103,7 +99,7 @@ onAuthStateChanged(auth, async (user) => {
     const tbody = document.createElement("tbody");
 
     workout.weeks.forEach((week, w) => {
-      const saved = weights[`${w}_${exIdx}`] || "";
+      const saved = workout.exercises[exIdx]?.weeks?.[w]?.weight || "";
       const row   = document.createElement("tr");
       if (w === activeWeek) row.classList.add("active-week");
       row.innerHTML = `
@@ -143,7 +139,7 @@ onAuthStateChanged(auth, async (user) => {
 
   // ── Exercises ──────────────────────────────────────────────────────────────
   function renderExercises() {
-    const exercises = workout.weeks[activeWeek].exercises;
+    const exercises = workout.exercises;
     const totalSets = exercises.reduce((sum, ex) => sum + ex.sets, 0);
 
     document.getElementById("total-exercises").textContent = exercises.length;
@@ -154,7 +150,7 @@ onAuthStateChanged(auth, async (user) => {
     list.innerHTML = "";
 
     exercises.forEach((exercise, exIdx) => {
-      const savedWeight = weights[`${activeWeek}_${exIdx}`] || "";
+      const savedWeight = workout.exercises[exIdx]?.weeks?.[activeWeek]?.weight || "";
 
       const card = document.createElement("div");
       card.className    = "exercise-card";

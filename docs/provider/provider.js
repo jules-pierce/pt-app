@@ -73,12 +73,17 @@ document.getElementById("workout-form").addEventListener("submit", async (e) => 
 
     const weeks = Array.from({ length: program.numWeeks }, (_, i) => ({
       rpe: 5 + i,
-      exercises,
+    }));
+
+    const exercisesWithWeeks = exercises.map((ex) => ({
+      ...ex,
+      weeks: Array.from({ length: program.numWeeks }, () => ({ weight: "" })),
     }));
 
     const workoutRef = await addDoc(collection(db, "programs", programId, "workouts"), {
       title: document.getElementById("title").value.trim(),
       notes: document.getElementById("notes").value.trim(),
+      exercises: exercisesWithWeeks,
       weeks,
     });
 

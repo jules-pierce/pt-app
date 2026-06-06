@@ -52,39 +52,44 @@ Navigation: `index.html` → `program-new.html` → `program.html?idx=N` → `ad
 
 ## Data model
 
-Everything lives in `localStorage` under the key `pt_programs`.
+Programs and workouts live in Firestore. Weight logs are stored per-user.
 
 ```js
-// pt_programs: Program[]
+// programs/{programId}
 {
   title: "Summer Strength",   // string
-  numWeeks: 8,                // number — how many weeks long the program is
-  workouts: [                 // length = numWorkouts set at creation time
-    {
-      title: "Upper Body",
-      notes: "Optional coaching note shown at top of workout",
-      weeks: [                // length = program.numWeeks
-        {
-          rpe: 5,             // starts at 5, increments by 1 per week
-          exercises: [
-            {
-              name: "Bench Press",
-              sets: 4,
-              reps: 5,        // string or number ("Max", "60s", 10, etc.)
-              note: "Optional exercise-specific note shown in popup",
-            }
-          ]
-        }
-      ]
-    },
-    null,   // null = slot not yet configured
-  ]
+  numWeeks: 8,                // number
+  workoutSlots: [             // ordered array; null = slot not yet configured
+    "workoutDocId",
+    null,
+  ],
+  clientId:   "uid",          // the athlete this program belongs to
+  providerId: "uid",          // the trainer who created it
+  createdAt:  Timestamp,
 }
-```
 
-Weight entries logged by the client are stored separately:
-- Key: `pt_weight_p{progIdx}_wo{workoutIdx}_wk{weekIdx}_e{exIdx}`
-- Value: string (e.g. "135 lbs")
+// programs/{programId}/workouts/{workoutId}
+{
+  title: "Upper Body",
+  notes: "Optional coaching note shown at top of workout",
+  exercises: [                // shared across all weeks — sets/reps never change
+    {
+      name: "Bench Press",
+      sets: 4,
+      reps: 5,                // string or number ("Max", "60s", 10, etc.)
+      note: "Optional exercise-specific note shown in popup",
+    }
+  ],
+  weeks: [                    // length = program.numWeeks; only RPE varies per week
+    { rpe: 5 },               // rpe starts at 5, increments by 1
+    { rpe: 6 },
+  ],
+}
+
+// users/{uid}/workoutWeights/{programId}_{workoutId}
+// Fields keyed by "${weekIndex}_${exerciseIndex}", value is a weight string
+{ "0_0": "135 lbs", "1_0": "145 lbs", ... }
+```
 
 ---
 
@@ -105,9 +110,8 @@ Weight entries logged by the client are stored separately:
 
 ## Decisions & constraints
 - No framework, no build step. Vanilla JS only.
-- All persistence is `localStorage`. There is no backend.
-- The client and provider share `localStorage` because they are served from the same origin.
-- Weeks all share the same exercises within a workout (per-week weight variation is tracked by the client via localStorage, not in the program data).
+- Persistence is Firebase Firestore + Auth. Weight logs are stored per-user in a subcollection.
+- Exercises are stored once per workout. Sets and reps are the same every week; only the logged weight changes week to week.
 - The `rpe` for each week is set when the workout is first saved: `5 + weekIndex`. It is preserved on edits.
 - The video in the exercise modal is hardcoded to `videos/video.MOV` (relative to `client/`).
 - Do not add dates to workouts — this was explicitly removed.

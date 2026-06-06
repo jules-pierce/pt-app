@@ -27,14 +27,12 @@ service cloud.firestore {
           get(/databases/$(database)/documents/programs/$(programId)).data.clientId   == request.auth.uid ||
           get(/databases/$(database)/documents/programs/$(programId)).data.providerId == request.auth.uid
         );
+        // Provider can do anything; client can update (to save weights).
         allow write: if request.auth != null &&
           get(/databases/$(database)/documents/programs/$(programId)).data.providerId == request.auth.uid;
+        allow update: if request.auth != null &&
+          get(/databases/$(database)/documents/programs/$(programId)).data.clientId == request.auth.uid;
       }
-    }
-
-    // Weight logs are private to the client who owns them.
-    match /users/{userId}/workoutWeights/{weightId} {
-      allow read, write: if request.auth.uid == userId;
     }
   }
 }

@@ -41,7 +41,7 @@ onAuthStateChanged(auth, async (user) => {
     const workout = workoutDocs[workoutId];
     if (!workout) return;
 
-    const totalSets = workout.weeks[0].exercises.reduce((sum, ex) => sum + ex.sets, 0);
+    const totalSets = workout.exercises.reduce((sum, ex) => sum + ex.sets, 0);
     const estTime   = Math.round(totalSets * 2.5);
 
     const card = document.createElement("a");
@@ -53,7 +53,7 @@ onAuthStateChanged(auth, async (user) => {
           <div class="workout-card-title">${workout.title}</div>
         </div>
         <div class="workout-card-meta">
-          <span>${workout.weeks[0].exercises.length} exercises</span>
+          <span>${workout.exercises.length} exercises</span>
           <span>${totalSets} sets</span>
           <span>~${estTime} min</span>
           <span class="workout-card-arrow">→</span>

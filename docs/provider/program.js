@@ -41,7 +41,7 @@ onAuthStateChanged(auth, async (user) => {
     row.className = "saved-row saved-row--clickable";
 
     if (workout) {
-      const exCount = workout.weeks[0]?.exercises?.length ?? 0;
+      const exCount = workout.exercises?.length ?? 0;
       row.innerHTML = `
         <div class="saved-info">
           <div class="slot-label">Workout ${slotIdx + 1}</div>

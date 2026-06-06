@@ -25,7 +25,7 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById("title").value = workout.title || "";
   document.getElementById("notes").value = workout.notes || "";
 
-  workout.weeks[0].exercises.forEach((ex) => addExerciseRow(ex));
+  workout.exercises.forEach((ex) => addExerciseRow(ex));
 });
 
 function addExerciseRow(ex = {}) {
@@ -63,19 +63,20 @@ document.getElementById("workout-form").addEventListener("submit", async (e) => 
   submitBtn.textContent = "Saving…";
 
   try {
-    const exercises = [...exerciseRows.querySelectorAll(".exercise-row")].map((row) => ({
+    const oldExercises = workout.exercises || [];
+    const exercises = [...exerciseRows.querySelectorAll(".exercise-row")].map((row, i) => ({
       name: row.querySelector(".ex-name").value.trim(),
       sets: parseInt(row.querySelector(".ex-sets").value, 10),
       reps: row.querySelector(".ex-reps").value.trim(),
       note: row.querySelector(".ex-note").value.trim(),
+      weeks: oldExercises[i]?.weeks
+        ?? Array.from({ length: workout.weeks.length }, () => ({ weight: "" })),
     }));
-
-    const weeks = workout.weeks.map((week) => ({ ...week, exercises }));
 
     await updateDoc(doc(db, "programs", programId, "workouts", workoutId), {
       title: document.getElementById("title").value.trim(),
       notes: document.getElementById("notes").value.trim(),
-      weeks,
+      exercises,
     });
 
     window.location.href = `program.html?id=${programId}`;
