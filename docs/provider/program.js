@@ -1,7 +1,7 @@
 import { auth, db } from "../firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { addSignOutButton } from "../auth-helpers.js";
+import { addSignOutButton, checkRole } from "../auth-helpers.js";
 
 const params    = new URLSearchParams(window.location.search);
 const programId = params.get("id");
@@ -9,6 +9,7 @@ const programId = params.get("id");
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = "../login.html"; return; }
   addSignOutButton();
+  if (!await checkRole(user, "provider")) return;
 
   const programSnap = await getDoc(doc(db, "programs", programId));
   if (!programSnap.exists()) {

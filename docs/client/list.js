@@ -1,13 +1,14 @@
 import { auth, db } from "../firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { addSignOutButton } from "../auth-helpers.js";
+import { addSignOutButton, checkRole } from "../auth-helpers.js";
 
 const list = document.getElementById("workout-list");
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = "../login.html"; return; }
   addSignOutButton();
+  if (!await checkRole(user, "client")) return;
 
   list.innerHTML = `<p style="color:var(--text-muted);font-size:0.9rem;">Loading…</p>`;
 

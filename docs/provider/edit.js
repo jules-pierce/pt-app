@@ -1,7 +1,7 @@
 import { auth, db } from "../firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { addSignOutButton } from "../auth-helpers.js";
+import { addSignOutButton, checkRole } from "../auth-helpers.js";
 
 const params     = new URLSearchParams(window.location.search);
 const programId  = params.get("program");
@@ -13,6 +13,7 @@ let workout = null;
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = "../login.html"; return; }
   addSignOutButton();
+  if (!await checkRole(user, "provider")) return;
 
   const workoutSnap = await getDoc(doc(db, "programs", programId, "workouts", workoutId));
   if (!workoutSnap.exists()) {

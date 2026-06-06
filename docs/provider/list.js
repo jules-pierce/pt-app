@@ -1,13 +1,14 @@
 import { auth, db } from "../firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { collection, query, where, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { addSignOutButton } from "../auth-helpers.js";
+import { addSignOutButton, checkRole } from "../auth-helpers.js";
 
 const container = document.getElementById("program-list");
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = "../login.html"; return; }
   addSignOutButton();
+  if (!await checkRole(user, "provider")) return;
 
   container.innerHTML = `<p class="empty-state">Loading…</p>`;
 
