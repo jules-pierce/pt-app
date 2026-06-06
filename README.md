@@ -14,19 +14,12 @@ To check deployment status: https://github.com/jules-pierce/pt-app/actions
 
 ## Local development
 
-Open `docs/index.html` directly in your browser. No build step required.
+ES modules require an HTTP server — opening files directly in the browser won't work.
 
-## Adding workouts
+Start a local server from the `docs` folder on port 8080:
 
-Edit the `workouts` array in `docs/workouts.js`. Each workout follows this shape:
-
-```js
-{
-  title: "Workout Name",
-  date: "Monday, Jan 1 2026",
-  notes: "Optional coaching note shown at the top.",
-  exercises: [
-    { name: "Exercise Name", category: "Muscle Group", sets: 3, reps: 10, weight: "100 lbs" },
-  ],
-}
 ```
+cd /Users/jules/Documents/pt-app/docs && python3 -m http.server 8080
+```
+
+Then open `http://localhost:8080/login.html` in your browser.
