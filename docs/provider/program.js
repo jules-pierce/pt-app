@@ -79,14 +79,28 @@ onAuthStateChanged(auth, async (user) => {
   viewOverlay.addEventListener("click", (e) => { if (e.target === viewOverlay) viewOverlay.hidden = true; });
 
   // ── Edit modal ───────────────────────────────────────────────────────────────
-  const editOverlay      = document.getElementById("edit-modal-overlay");
-  const editExerciseRows = document.getElementById("edit-exercise-rows");
-  const editForm         = document.getElementById("edit-modal-form");
+  const editOverlay       = document.getElementById("edit-modal-overlay");
+  const editExerciseRows  = document.getElementById("edit-exercise-rows");
+  const editDefaultSetsInput = document.getElementById("edit-default-sets");
+  const editForm          = document.getElementById("edit-modal-form");
 
-  let activeWorkoutId  = null;
-  let activeWorkout    = null;
+  let activeWorkoutId = null;
+  let activeWorkout   = null;
 
-  function addEditExerciseRow(ex = {}) {
+  function getEditDefaultSets() {
+    return parseInt(editDefaultSetsInput.value, 10) || null;
+  }
+
+  editDefaultSetsInput.addEventListener("input", () => {
+    const val = getEditDefaultSets();
+    editExerciseRows.querySelectorAll(".exercise-row").forEach((row) => {
+      const input = row.querySelector(".ex-sets");
+      if (input.disabled) input.value = val ?? "";
+    });
+  });
+
+  function addEditExerciseRow(ex, overriding) {
+    const setsVal = overriding ? (ex.sets ?? "") : (getEditDefaultSets() ?? "");
     const card = document.createElement("div");
     card.className = "exercise-row exercise-card-form";
     card.innerHTML = `
@@ -96,8 +110,11 @@ onAuthStateChanged(auth, async (user) => {
       </div>
       <div class="exercise-card-form-fields">
         <div class="exercise-card-form-field">
-          <label class="form-label">Sets</label>
-          <input class="form-input ex-sets" type="number" placeholder="e.g. 3" min="1" value="${ex.sets || ""}" required />
+          <div class="form-label-row">
+            <label class="form-label">Sets</label>
+            <button type="button" class="btn-sets-toggle">${overriding ? "Use default" : "Override"}</button>
+          </div>
+          <input class="form-input ex-sets" type="number" min="1" value="${setsVal}" ${overriding ? "" : "disabled"} />
         </div>
         <div class="exercise-card-form-field">
           <label class="form-label">Reps</label>
@@ -106,6 +123,22 @@ onAuthStateChanged(auth, async (user) => {
       </div>
       <input class="form-input ex-note" type="text" placeholder="Note (optional)" value="${ex.note || ""}" />
     `;
+
+    const setsInput = card.querySelector(".ex-sets");
+    const toggleBtn = card.querySelector(".btn-sets-toggle");
+
+    toggleBtn.addEventListener("click", () => {
+      if (setsInput.disabled) {
+        setsInput.disabled = false;
+        setsInput.focus();
+        toggleBtn.textContent = "Use default";
+      } else {
+        setsInput.disabled = true;
+        setsInput.value = getEditDefaultSets() ?? "";
+        toggleBtn.textContent = "Override";
+      }
+    });
+
     card.querySelector(".btn-remove").addEventListener("click", () => card.remove());
     editExerciseRows.appendChild(card);
   }
@@ -114,17 +147,23 @@ onAuthStateChanged(auth, async (user) => {
     activeWorkoutId = workoutId;
     activeWorkout   = workout;
 
-    document.getElementById("edit-title").value = workout.title || "";
-    document.getElementById("edit-notes").value = workout.notes || "";
+    document.getElementById("edit-title").value        = workout.title       || "";
+    document.getElementById("edit-notes").value        = workout.notes       || "";
+    editDefaultSetsInput.value                         = workout.defaultSets ?? "";
     editExerciseRows.innerHTML = "";
-    workout.exercises.forEach((ex) => addEditExerciseRow(ex));
+
+    workout.exercises.forEach((ex) => {
+      // Old data without setsOverride: treat as overriding (backward compat)
+      const overriding = ex.setsOverride !== false;
+      addEditExerciseRow(ex, overriding);
+    });
 
     editOverlay.hidden = false;
   }
 
   document.getElementById("edit-modal-close").addEventListener("click", () => { editOverlay.hidden = true; });
   editOverlay.addEventListener("click", (e) => { if (e.target === editOverlay) editOverlay.hidden = true; });
-  document.getElementById("edit-add-exercise").addEventListener("click", () => addEditExerciseRow());
+  document.getElementById("edit-add-exercise").addEventListener("click", () => addEditExerciseRow({}, false));
 
   editForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -133,15 +172,22 @@ onAuthStateChanged(auth, async (user) => {
     submitBtn.textContent = "Saving…";
 
     try {
+      const defaultSets  = getEditDefaultSets();
       const oldExercises = activeWorkout.exercises || [];
-      const exercises = [...editExerciseRows.querySelectorAll(".exercise-row")].map((row, i) => ({
-        name:  row.querySelector(".ex-name").value.trim(),
-        sets:  parseInt(row.querySelector(".ex-sets").value, 10),
-        reps:  row.querySelector(".ex-reps").value.trim(),
-        note:  row.querySelector(".ex-note").value.trim(),
-        weeks: oldExercises[i]?.weeks
-          ?? Array.from({ length: activeWorkout.weeks.length }, () => ({ weight: "" })),
-      }));
+
+      const exercises = [...editExerciseRows.querySelectorAll(".exercise-row")].map((row, i) => {
+        const setsInput   = row.querySelector(".ex-sets");
+        const setsOverride = !setsInput.disabled;
+        return {
+          name:        row.querySelector(".ex-name").value.trim(),
+          sets:        setsOverride ? parseInt(setsInput.value, 10) : defaultSets,
+          reps:        row.querySelector(".ex-reps").value.trim(),
+          note:        row.querySelector(".ex-note").value.trim(),
+          setsOverride,
+          weeks:       oldExercises[i]?.weeks
+            ?? Array.from({ length: activeWorkout.weeks.length }, () => ({ weight: "" })),
+        };
+      });
 
       const newTitle = document.getElementById("edit-title").value.trim();
       const newNotes = document.getElementById("edit-notes").value.trim();
@@ -149,10 +195,11 @@ onAuthStateChanged(auth, async (user) => {
       await updateDoc(doc(db, "programs", programId, "workouts", activeWorkoutId), {
         title: newTitle,
         notes: newNotes,
+        defaultSets,
         exercises,
       });
 
-      workoutDocs[activeWorkoutId] = { ...activeWorkout, title: newTitle, notes: newNotes, exercises };
+      workoutDocs[activeWorkoutId] = { ...activeWorkout, title: newTitle, notes: newNotes, defaultSets, exercises };
       editOverlay.hidden = true;
       renderSlots();
     } catch (err) {

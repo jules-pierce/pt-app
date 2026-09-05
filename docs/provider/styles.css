@@ -197,6 +197,23 @@ main {
 }
 .btn-add:hover { border-color: var(--accent); color: var(--accent); }
 
+.btn-sets-toggle {
+  background: none;
+  border: none;
+  color: var(--accent-light);
+  font-family: var(--font);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+.btn-sets-toggle:hover { color: var(--accent); }
+
+.ex-sets:disabled { opacity: 0.5; }
+
 .btn-save {
   background: var(--accent);
   border: none;
