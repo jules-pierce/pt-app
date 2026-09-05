@@ -21,6 +21,41 @@
     <div id="workout-slots"></div>
   </main>
 
+  <div id="view-modal-overlay" class="view-modal-overlay" hidden>
+    <div class="view-modal">
+      <button id="view-modal-close" class="modal-close-btn">✕</button>
+      <h2 id="view-modal-title"></h2>
+      <div class="view-table-wrap">
+        <div id="view-modal-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="edit-modal-overlay" class="view-modal-overlay" hidden>
+    <div class="view-modal">
+      <button id="edit-modal-close" class="modal-close-btn">✕</button>
+      <h2>Edit Workout</h2>
+      <form id="edit-modal-form">
+        <div class="form-section">
+          <label class="form-label" for="edit-title">Title</label>
+          <input class="form-input" id="edit-title" type="text" required />
+        </div>
+        <div class="form-section">
+          <label class="form-label" for="edit-notes">Notes <span class="optional">(optional)</span></label>
+          <textarea class="form-input form-textarea" id="edit-notes" rows="3"></textarea>
+        </div>
+        <div class="form-section">
+          <div class="form-label-row">
+            <label class="form-label">Exercises</label>
+            <button type="button" class="btn-add" id="edit-add-exercise">+ Add Exercise</button>
+          </div>
+          <div id="edit-exercise-rows"></div>
+        </div>
+        <button class="btn-save" type="submit">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
   <script type="module" src="program.js"></script>
 </body>
 </html>
