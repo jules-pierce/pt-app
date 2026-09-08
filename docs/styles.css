@@ -1,0 +1,795 @@
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --oc-dark-0: #C1C2C5;
+  --oc-dark-1: #A6A7AB;
+  --oc-dark-2: #909296;
+  --oc-dark-3: #5C5F66;
+  --oc-dark-4: #373A40;
+  --oc-dark-5: #2C2E33;
+  --oc-dark-6: #25262B;
+  --oc-dark-7: #1A1B1E;
+  --oc-dark-8: #141517;
+  --oc-dark-9: #101113;
+
+  --bg:           var(--oc-dark-9);
+  --surface:      var(--oc-dark-7);
+  --surface-2:    var(--oc-dark-5);
+  --accent:       var(--oc-violet-5);
+  --accent-light: var(--oc-violet-3);
+  --text:         var(--oc-gray-1);
+  --text-muted:   var(--oc-dark-2);
+  --border:       var(--oc-dark-4);
+  --green:        var(--oc-teal-4);
+  --red:          var(--oc-pink-5);
+  --radius: 12px;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+html { font-size: 16px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+header {
+  background: linear-gradient(135deg, var(--oc-dark-7) 0%, var(--oc-violet-9) 50%, var(--oc-dark-7) 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 2.5rem 1.5rem 2rem;
+  text-align: center;
+}
+
+.header-inner { max-width: 720px; margin: 0 auto; }
+
+.label {
+  display: inline-block;
+  background: rgba(132, 94, 247, 0.25);
+  color: var(--accent-light);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(132, 94, 247, 0.4);
+  margin-bottom: 0.75rem;
+}
+
+header h1 {
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+header p {
+  color: var(--text-muted);
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+}
+
+/* ── Main ────────────────────────────────────────────────────────────────── */
+main {
+  flex: 1;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+/* ── Back link ───────────────────────────────────────────────────────────── */
+.back-link {
+  display: inline-block;
+  color: var(--accent-light);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 1rem;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+.back-link:hover { opacity: 1; }
+
+/* ── Sign out button ─────────────────────────────────────────────────────── */
+.btn-signout {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+  margin-top: 0.75rem;
+  transition: color 0.15s, border-color 0.15s;
+}
+.btn-signout:hover { color: var(--red); border-color: var(--red); }
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.empty-state { color: var(--text-muted); font-size: 0.9rem; }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROVIDER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Form ────────────────────────────────────────────────────────────────── */
+#workout-form, #program-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-section { display: flex; flex-direction: column; gap: 0.4rem; }
+
+.form-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.form-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.optional { font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+.form-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  padding: 0.65rem 0.9rem;
+  width: 100%;
+  transition: border-color 0.15s;
+}
+
+.form-input::placeholder { color: var(--text-muted); }
+.form-input:focus { outline: none; border-color: var(--accent); }
+
+.form-textarea { resize: vertical; line-height: 1.6; }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+/* ── Exercise cards (form) ───────────────────────────────────────────────── */
+#exercise-rows, #edit-exercise-rows { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.exercise-card-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.exercise-card-form-header {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.exercise-card-form-header .form-input {
+  flex: 1;
+  font-weight: 600;
+}
+
+.exercise-card-form-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.exercise-card-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.btn-remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: color 0.15s;
+}
+.btn-remove:hover { color: var(--red); }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn-add {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--accent-light);
+  font-family: var(--font);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-add:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-sets-toggle {
+  background: none;
+  border: none;
+  color: var(--accent-light);
+  font-family: var(--font);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+.btn-sets-toggle:hover { color: var(--accent); }
+
+.ex-sets:disabled { opacity: 0.5; }
+
+.btn-save {
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.8rem 1.5rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  align-self: flex-start;
+}
+.btn-save:hover { opacity: 0.85; }
+
+/* ── Saved list ──────────────────────────────────────────────────────────── */
+.saved-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.1rem;
+  gap: 1rem;
+}
+
+.saved-row + .saved-row { margin-top: 0.5rem; }
+
+.slot-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.saved-title { font-weight: 700; font-size: 0.95rem; }
+.saved-title.empty { color: var(--text-muted); font-weight: 400; }
+.saved-meta  { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem; }
+
+.slot-arrow {
+  color: var(--accent-light);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.saved-row--clickable {
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.saved-row--clickable:hover { border-color: var(--accent); background: var(--surface-2); }
+
+.btn-delete {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 0.8rem;
+  padding: 0.3rem 0.65rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+.btn-delete:hover { color: var(--red); border-color: var(--red); }
+
+.btn-add-workout {
+  display: block;
+  text-align: center;
+  margin-top: 1rem;
+  padding: 0.85rem;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--accent-light);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-add-workout:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Slot action buttons ─────────────────────────────────────────────────── */
+.slot-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.btn-action {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.btn-action:hover { color: var(--text); border-color: var(--text-muted); }
+
+.btn-action--primary { border-color: var(--accent); color: var(--accent-light); }
+.btn-action--primary:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ── Provider modals (view / edit) ───────────────────────────────────────── */
+.view-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+.view-modal-overlay[hidden] { display: none; }
+
+.view-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-width: 720px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  position: relative;
+}
+
+.view-modal h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 1.25rem;
+  padding-right: 2rem;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+.modal-close-btn:hover { color: var(--text); }
+
+.view-table-wrap { overflow-x: auto; }
+
+.view-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.view-table th,
+.view-table td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.view-table th {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.view-table th small {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-top: 0.1rem;
+}
+
+.view-table tbody tr:last-child td { border-bottom: none; }
+.view-table tbody tr:hover { background: var(--surface-2); }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CLIENT
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Week Tabs ───────────────────────────────────────────────────────────── */
+.week-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.week-tab {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.week-tab:hover { border-color: var(--accent); color: var(--text); }
+
+.week-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.tab-rpe {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  opacity: 0.7;
+  margin-top: 0.1rem;
+}
+
+/* ── Stats Bar ───────────────────────────────────────────────────────────── */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--accent-light);
+  line-height: 1;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+}
+
+/* ── Workout Notes ───────────────────────────────────────────────────────── */
+.workout-notes {
+  background: rgba(132, 94, 247, 0.08);
+  border: 1px solid rgba(132, 94, 247, 0.25);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ── Exercise Cards (client view) ────────────────────────────────────────── */
+.exercise-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.exercise-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.exercise-card:hover { border-color: var(--accent); }
+
+.exercise-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+}
+
+.exercise-number {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.exercise-info { flex: 1; }
+
+.exercise-name {
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.exercise-prescription {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.pill {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.weight-input {
+  color: var(--green);
+  border-color: rgba(56, 217, 169, 0.3);
+  background: rgba(56, 217, 169, 0.08);
+  width: 7rem;
+  text-align: center;
+  outline: none;
+  font-family: var(--font);
+  cursor: text;
+}
+
+.weight-input::placeholder { color: rgba(56, 217, 169, 0.4); }
+.weight-input:focus { border-color: var(--green); background: rgba(56, 217, 169, 0.15); }
+
+/* ── Workout List ────────────────────────────────────────────────────────── */
+.workout-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.workout-card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.workout-card:hover { border-color: var(--accent); background: var(--surface-2); }
+
+.workout-card-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.25rem;
+  gap: 1rem;
+}
+
+.workout-card-title { font-weight: 700; font-size: 1rem; }
+
+.workout-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.workout-card-arrow {
+  color: var(--accent-light);
+  font-size: 1rem;
+  transition: transform 0.15s;
+}
+
+.workout-card:hover .workout-card-arrow { transform: translateX(3px); }
+
+/* ── Client modal (exercise detail) ──────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 100;
+}
+
+.modal-overlay[hidden] { display: none; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-muted);
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.modal-close:hover { color: var(--text); border-color: var(--text-muted); }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-right: 2rem;
+}
+
+.modal-prescription { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+.modal-section { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.modal-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.weights-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.weights-table thead th {
+  text-align: left;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.weights-table tbody tr { border-bottom: 1px solid var(--border); }
+.weights-table tbody tr:last-child { border-bottom: none; }
+.weights-table tbody tr.active-week td { color: var(--accent-light); }
+
+.weights-table tbody td {
+  padding: 0.5rem 0.75rem;
+  vertical-align: middle;
+}
+
+.weight-table-input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--green);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  width: 8rem;
+  text-align: center;
+  transition: border-color 0.15s;
+}
+
+.weight-table-input::placeholder { color: rgba(56, 217, 169, 0.35); }
+.weight-table-input:focus { outline: none; border-color: var(--green); }
+
+.modal-notes {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.modal-video {
+  width: 100%;
+  border-radius: 8px;
+  background: #000;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+footer {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--border);
+}
+
+footer span { color: var(--red); }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .stats-bar { gap: 0.5rem; }
+  .stat { padding: 0.75rem 0.5rem; }
+  .stat-value { font-size: 1.25rem; }
+  .exercise-header { padding: 0.85rem 1rem; gap: 0.65rem; }
+  .exercise-prescription { gap: 0.3rem; }
+  .pill { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+}
