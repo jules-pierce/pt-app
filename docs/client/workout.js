@@ -85,6 +85,8 @@ onAuthStateChanged(auth, async (user) => {
       notesSection.hidden = true;
     }
 
+    const units = exercise.units || "lb";
+
     document.getElementById("modal-prescription").innerHTML = `
       <span class="pill">${exercise.sets} sets</span>
       <span class="pill">${exercise.reps} reps</span>
@@ -95,7 +97,7 @@ onAuthStateChanged(auth, async (user) => {
     weightsContainer.innerHTML = "";
     const table = document.createElement("table");
     table.className = "weights-table";
-    table.innerHTML = `<thead><tr><th>Week</th><th>RPE</th><th>Weight</th></tr></thead>`;
+    table.innerHTML = `<thead><tr><th>Week</th><th>RPE</th><th>${units}</th></tr></thead>`;
     const tbody = document.createElement("tbody");
 
     workout.weeks.forEach((week, w) => {
@@ -105,7 +107,7 @@ onAuthStateChanged(auth, async (user) => {
       row.innerHTML = `
         <td>Week ${w + 1}</td>
         <td>${week.rpe}</td>
-        <td><input class="weight-table-input" type="text" placeholder="—" value="${saved}" /></td>
+        <td><input class="weight-table-input" type="text" placeholder="${units}" value="${saved}" /></td>
       `;
       const input = row.querySelector("input");
       input.addEventListener("blur", async (e) => {
@@ -152,6 +154,8 @@ onAuthStateChanged(auth, async (user) => {
     exercises.forEach((exercise, exIdx) => {
       const savedWeight = workout.exercises[exIdx]?.weeks?.[activeWeek]?.weight || "";
 
+      const units = exercise.units || "lb";
+
       const card = document.createElement("div");
       card.className    = "exercise-card";
       card.style.cursor = "pointer";
@@ -167,7 +171,7 @@ onAuthStateChanged(auth, async (user) => {
             <input
               class="pill weight-input"
               type="text"
-              placeholder="weight"
+              placeholder="${units}"
               value="${savedWeight}"
               aria-label="Weight for ${exercise.name}"
             />

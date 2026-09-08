@@ -46,6 +46,14 @@ function makeExerciseRow(ex, overriding) {
     </div>
     <div class="exercise-card-form-fields">
       <div class="exercise-card-form-field">
+        <label class="form-label">Units</label>
+        <select class="form-input ex-units">
+          <option value="lb" ${(ex.units || "lb") === "lb" ? "selected" : ""}>lb</option>
+          <option value="kg" ${ex.units === "kg" ? "selected" : ""}>kg</option>
+          <option value="reps" ${ex.units === "reps" ? "selected" : ""}>reps</option>
+        </select>
+      </div>
+      <div class="exercise-card-form-field">
         <div class="form-label-row">
           <label class="form-label">Sets</label>
           <button type="button" class="btn-sets-toggle">${overriding ? "Use default" : "Override"}</button>
@@ -99,6 +107,7 @@ document.getElementById("workout-form").addEventListener("submit", async (e) => 
         name:        row.querySelector(".ex-name").value.trim(),
         sets:        setsOverride ? parseInt(setsInput.value, 10) : defaultSets,
         reps:        row.querySelector(".ex-reps").value.trim(),
+        units:       row.querySelector(".ex-units").value,
         note:        row.querySelector(".ex-note").value.trim(),
         setsOverride,
       };

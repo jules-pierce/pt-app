@@ -103,6 +103,7 @@ onAuthStateChanged(auth, async (user) => {
         ).join("");
 
         const rows = exercises.map((ex) => {
+          const units = ex.units || "lb";
           const weightCells = weeks.map((_, w) => {
             const weight = ex.weeks?.[w]?.weight || "—";
             return `<td>${weight}</td>`;
@@ -111,13 +112,14 @@ onAuthStateChanged(auth, async (user) => {
             <td>${ex.name}</td>
             <td>${ex.sets}</td>
             <td>${ex.reps}</td>
+            <td>${units}</td>
             ${weightCells}
           </tr>`;
         }).join("");
 
         body.innerHTML = `
           <table class="view-table">
-            <thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th>${weekHeaders}</tr></thead>
+            <thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Units</th>${weekHeaders}</tr></thead>
             <tbody>${rows}</tbody>
           </table>
         `;
@@ -160,6 +162,14 @@ onAuthStateChanged(auth, async (user) => {
           <button type="button" class="btn-remove" aria-label="Remove exercise">✕</button>
         </div>
         <div class="exercise-card-form-fields">
+          <div class="exercise-card-form-field">
+            <label class="form-label">Units</label>
+            <select class="form-input ex-units">
+              <option value="lb" ${(ex.units || "lb") === "lb" ? "selected" : ""}>lb</option>
+              <option value="kg" ${ex.units === "kg" ? "selected" : ""}>kg</option>
+              <option value="reps" ${ex.units === "reps" ? "selected" : ""}>reps</option>
+            </select>
+          </div>
           <div class="exercise-card-form-field">
             <div class="form-label-row">
               <label class="form-label">Sets</label>
@@ -232,6 +242,7 @@ onAuthStateChanged(auth, async (user) => {
             name:        row.querySelector(".ex-name").value.trim(),
             sets:        setsOverride ? parseInt(setsInput.value, 10) : defaultSets,
             reps:        row.querySelector(".ex-reps").value.trim(),
+            units:       row.querySelector(".ex-units").value,
             note:        row.querySelector(".ex-note").value.trim(),
             setsOverride,
             weeks:       oldExercises[i]?.weeks
