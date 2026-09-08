@@ -19,76 +19,101 @@ The user commits and pushes themselves — do not commit or push unless explicit
 
 ## Architecture
 
-Two separate static apps share the same `localStorage` (same origin on GitHub Pages).
+Two separate static apps share the same Firebase project (Firestore + Auth) and the same shared files at `docs/`.
+
+### Shared files (`docs/`)
+| File | Purpose |
+|---|---|
+| `firebase-config.js` | Firebase app, `db`, `auth` exports |
+| `auth-helpers.js` | `addSignOutButton`, `checkRole` |
+| `open-color.css` | Color palette variables |
+| `styles.css` | All styles for both apps |
+| `login.html` + `login.js` | Shared sign-in / sign-up page |
+| `list.js` | Shared programs list logic (role-aware) |
 
 ### Client (`docs/client/`)
 The athlete-facing app. Read-only except for weight inputs.
 
 | File | Purpose |
 |---|---|
-| `index.html` + `list.js` | Programs list |
+| `index.html` + `list.js` | Programs list (shim — imports `../list.js`) |
 | `program.html` + `program.js` | Workouts within a program |
 | `workout.html` + `workout.js` | Workout detail: week tabs, exercise cards, modal |
-| `workouts.js` | Loads `pt_programs` from localStorage |
-| `styles.css` | All client styles |
 
-Navigation: `index.html` → `program.html?idx=N` → `workout.html?program=N&workout=M`
+Navigation: `index.html` → `program.html?id=X` → `workout.html?program=X&workout=Y`
 
 ### Provider (`docs/provider/`)
 The trainer-facing app. Creates and edits programs and workouts.
 
 | File | Purpose |
 |---|---|
-| `index.html` + `list.js` | Programs list |
+| `index.html` + `list.js` | Programs list (shim — imports `../list.js`) |
 | `program-new.html` + `program-new.js` | Create a new program |
-| `program.html` + `program.js` | Workout slots within a program |
+| `program.html` + `program.js` | Workout slots; inline View and Edit modals |
 | `add.html` + `provider.js` | Add a workout to a slot |
-| `edit.html` + `edit.js` | Edit an existing workout slot |
-| `styles.css` | All provider styles |
 
-Navigation: `index.html` → `program-new.html` → `program.html?idx=N` → `add.html?program=N&slot=M` or `edit.html?program=N&slot=M`
+Navigation: `index.html` → `program-new.html` → `program.html?id=X` → `add.html?program=X&slot=N`
+
+---
+
+## Sharing between provider and client
+
+**Goal: share as much as possible.** When adding a feature or file, default to putting it in `docs/` and making it work for both roles.
+
+### What is already shared
+- CSS (`docs/styles.css`) — one file for both apps
+- Programs list (`docs/list.js`) — role-aware; queries by `providerId` or `clientId`, shows Delete and Create for providers only
+- Login, Firebase config, auth helpers
+
+### What still needs sharing (future work)
+- Programs list page (`program.html`) — provider manages slots; client navigates to workouts. Provider page is the more capable one; client behaviour would be additive.
+
+### Rules for shared JS files
+- **HTML `<script src>` must always point to a same-directory file.** Chrome blocks `<script type="module" src="../file.js">` under `file://` due to cross-origin restrictions.
+- **JS `import` statements may cross directories freely** — only `<script src>` in HTML is restricted.
+- The pattern for shared logic: put the real code in `docs/shared-file.js`; create a one-line shim in each subdirectory (`import "../shared-file.js"`); HTML loads the shim.
 
 ---
 
 ## Data model
 
-Programs and workouts live in Firestore. Weight logs are stored per-user.
-
 ```js
 // programs/{programId}
 {
-  title: "Summer Strength",   // string
-  numWeeks: 8,                // number
-  workoutSlots: [             // ordered array; null = slot not yet configured
-    "workoutDocId",
-    null,
-  ],
-  clientId:   "uid",          // the athlete this program belongs to
-  providerId: "uid",          // the trainer who created it
-  createdAt:  Timestamp,
+  title:        "Summer Strength",
+  numWeeks:     8,
+  workoutSlots: ["workoutDocId", null],  // null = slot not yet configured
+  clientId:     "uid",
+  providerId:   "uid",
+  createdAt:    Timestamp,
 }
 
 // programs/{programId}/workouts/{workoutId}
 {
-  title: "Upper Body",
-  notes: "Optional coaching note shown at top of workout",
-  exercises: [                // shared across all weeks — sets/reps never change
+  title:       "Upper Body",
+  notes:       "Optional coaching note shown at top of workout",
+  defaultSets: 3,           // workout-level default; exercises may override
+  exercises: [
     {
-      name: "Bench Press",
-      sets: 4,
-      reps: 5,                // string or number ("Max", "60s", 10, etc.)
-      note: "Optional exercise-specific note shown in popup",
+      name:        "Bench Press",
+      sets:        4,          // resolved value (default or override)
+      setsOverride: true,      // false = uses defaultSets, true = custom value
+      reps:        5,          // string or number ("Max", "60s", 10, etc.)
+      note:        "Optional exercise note shown in popup",
+      weeks: [                 // length = program.numWeeks
+        { rpe: 5, weight: "" },
+        { rpe: 6, weight: "135 lbs" },
+      ],
     }
   ],
-  weeks: [                    // length = program.numWeeks; only RPE varies per week
-    { rpe: 5 },               // rpe starts at 5, increments by 1
+  weeks: [          // length = program.numWeeks; RPE only, no weights here
+    { rpe: 5 },
     { rpe: 6 },
   ],
 }
 
-// users/{uid}/workoutWeights/{programId}_{workoutId}
-// Fields keyed by "${weekIndex}_${exerciseIndex}", value is a weight string
-{ "0_0": "135 lbs", "1_0": "145 lbs", ... }
+// users/{uid}
+{ role: "provider" | "client" }
 ```
 
 ---
@@ -100,17 +125,22 @@ Programs and workouts live in Firestore. Weight logs are stored per-user.
 - **Exercise cards** — clicking opens a modal. Weight input on card stays in sync with modal.
 - **Modal** — shows sets/reps, a weights table across all weeks, an exercise note (if set), and an embedded video (`videos/video.MOV`).
 
-### Provider
-- Programs are created with a title, number of weeks, and number of workout slots.
-- Each slot starts as `null` and is configured by filling in the add workout form.
-- Configured slots are clickable → edit form. Unconfigured slots show "+ Configure".
-- Deleting a program removes it from `pt_programs`. Deleting is not available for individual workouts (edit instead).
+### Provider program page
+- Each slot starts as `null` and is configured via the add form.
+- Configured slots show **View** (summary table with client weights) and **Edit** (inline modal form) buttons.
+- Unconfigured slots show `+` and navigate to `add.html`.
+- Deleting a program is available on the list page. Deleting individual workouts is not supported (edit instead).
+
+### Provider workout form (add + edit)
+- `defaultSets` field sets the workout-level default.
+- Each exercise's sets input is disabled (showing the default) until the provider clicks **Override**.
+- Changing `defaultSets` live-updates all non-overriding exercise rows.
 
 ---
 
 ## Decisions & constraints
 - No framework, no build step. Vanilla JS only.
-- Persistence is Firebase Firestore + Auth. Weight logs are stored per-user in a subcollection.
+- Persistence is Firebase Firestore + Auth.
 - Exercises are stored once per workout. Sets and reps are the same every week; only the logged weight changes week to week.
 - The `rpe` for each week is set when the workout is first saved: `5 + weekIndex`. It is preserved on edits.
 - The video in the exercise modal is hardcoded to `videos/video.MOV` (relative to `client/`).
