@@ -104,10 +104,13 @@ onAuthStateChanged(auth, async (user) => {
       const saved = workout.exercises[exIdx]?.weeks?.[w]?.weight || "";
       const row   = document.createElement("tr");
       if (w === activeWeek) row.classList.add("active-week");
+      const modalSuggestedHint = (w === 0 && exercise.suggestedWeight)
+        ? `<div class="suggested-weight">Suggested start: ${exercise.suggestedWeight}</div>`
+        : "";
       row.innerHTML = `
         <td>Week ${w + 1}</td>
         <td>${week.rpe}</td>
-        <td><input class="weight-table-input" type="text" placeholder="${units}" value="${saved}" /></td>
+        <td><input class="weight-table-input" type="text" placeholder="${units}" value="${saved}" />${modalSuggestedHint}</td>
       `;
       const input = row.querySelector("input");
       input.addEventListener("blur", async (e) => {
@@ -155,6 +158,9 @@ onAuthStateChanged(auth, async (user) => {
       const savedWeight = workout.exercises[exIdx]?.weeks?.[activeWeek]?.weight || "";
 
       const units = exercise.units || "lb";
+      const suggestedHint = (activeWeek === 0 && exercise.suggestedWeight)
+        ? `<span class="suggested-weight">Suggested start: ${exercise.suggestedWeight}</span>`
+        : "";
 
       const card = document.createElement("div");
       card.className    = "exercise-card";
@@ -164,6 +170,7 @@ onAuthStateChanged(auth, async (user) => {
           <div class="exercise-number">${exIdx + 1}</div>
           <div class="exercise-info">
             <div class="exercise-name">${exercise.name}</div>
+            ${suggestedHint}
           </div>
           <div class="exercise-prescription">
             <span class="pill">${exercise.sets} sets</span>

@@ -196,13 +196,22 @@ main {
 
 .exercise-card-form-fields {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
 }
 
 .exercise-card-form-fields .form-input {
-  font-size: 0.85rem;
-  padding: 0.35rem 0.5rem;
+  font-size: 0.82rem;
+  padding: 0.3rem 0.35rem;
+}
+
+.exercise-card-form-fields .form-label {
+  font-size: 0.68rem;
+}
+
+.exercise-card-form-fields .btn-sets-toggle {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.3rem;
 }
 
 .exercise-card-form-field {
@@ -570,7 +579,14 @@ main {
   flex-shrink: 0;
 }
 
-.exercise-info { flex: 1; }
+.exercise-info {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
 
 .exercise-name {
   font-weight: 700;
@@ -608,6 +624,13 @@ main {
 
 .weight-input::placeholder { color: rgba(56, 217, 169, 0.4); }
 .weight-input:focus { border-color: var(--green); background: rgba(56, 217, 169, 0.15); }
+
+.suggested-weight {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  align-self: center;
+}
 
 /* ── Workout List ────────────────────────────────────────────────────────── */
 .workout-list {
