@@ -451,7 +451,9 @@ main {
 }
 
 .view-table tbody tr:last-child td { border-bottom: none; }
+.view-table tbody tr { cursor: pointer; }
 .view-table tbody tr:hover { background: var(--surface-2); }
+.view-table td.has-client-note { color: var(--accent-light); }
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -719,7 +721,7 @@ main {
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  z-index: 100;
+  z-index: 200;
 }
 
 .modal-overlay[hidden] { display: none; }
@@ -865,6 +867,13 @@ main {
 
 .note-row-textarea::placeholder { color: var(--text-muted); }
 .note-row-textarea:focus { outline: none; border-color: var(--accent-light); }
+
+.note-row-readonly {
+  color: var(--text-muted);
+  font-size: 0.825rem;
+  line-height: 1.6;
+  margin: 0;
+}
 
 .modal-video {
   width: 100%;

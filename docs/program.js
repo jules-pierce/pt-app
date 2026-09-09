@@ -2,6 +2,7 @@ import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { addSignOutButton } from "./auth-helpers.js";
+import { setupExerciseModal } from "./exercise-modal.js";
 
 const params    = new URLSearchParams(window.location.search);
 const programId = params.get("id");
@@ -108,6 +109,9 @@ onAuthStateChanged(auth, async (user) => {
 
   // ── Provider rendering ───────────────────────────────────────────────────────
   function renderProvider() {
+    // Set up exercise detail modal first so its ESC handler takes priority
+    const exModal = setupExerciseModal({ videoSrc: "../client/videos/video.MOV" });
+
     // View modal
     const viewOverlay = document.getElementById("view-modal-overlay");
 
@@ -120,33 +124,43 @@ onAuthStateChanged(auth, async (user) => {
 
       if (exercises.length === 0) {
         body.innerHTML = `<p class="empty-state">No exercises.</p>`;
-      } else {
-        const weekHeaders = weeks.map((w, i) =>
-          `<th>Wk ${i + 1}<small>RPE ${w.rpe}</small></th>`
-        ).join("");
-
-        const rows = exercises.map((ex) => {
-          const units = ex.units || "lb";
-          const weightCells = weeks.map((_, w) => {
-            const weight = ex.weeks?.[w]?.weight || "—";
-            return `<td>${weight}</td>`;
-          }).join("");
-          return `<tr>
-            <td>${ex.name}</td>
-            <td>${ex.sets}</td>
-            <td>${ex.reps}</td>
-            <td>${units}</td>
-            ${weightCells}
-          </tr>`;
-        }).join("");
-
-        body.innerHTML = `
-          <table class="view-table">
-            <thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Units</th>${weekHeaders}</tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-        `;
+        viewOverlay.hidden = false;
+        return;
       }
+
+      const weekHeaders = weeks.map((w, i) =>
+        `<th>Wk ${i + 1}<small>RPE ${w.rpe}</small></th>`
+      ).join("");
+
+      const rows = exercises.map((ex, idx) => {
+        const units = ex.units || "lb";
+        const weightCells = weeks.map((_, w) => {
+          const weight  = ex.weeks?.[w]?.weight || "—";
+          const hasNote = !!ex.weeks?.[w]?.clientNote;
+          return `<td${hasNote ? ' class="has-client-note"' : ""}>${weight}</td>`;
+        }).join("");
+        return `<tr data-ex-idx="${idx}" style="cursor:pointer">
+          <td>${ex.name}</td>
+          <td>${ex.sets}</td>
+          <td>${ex.reps}</td>
+          <td>${units}</td>
+          ${weightCells}
+        </tr>`;
+      }).join("");
+
+      body.innerHTML = `
+        <table class="view-table">
+          <thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Units</th>${weekHeaders}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+
+      body.querySelector("tbody").addEventListener("click", (e) => {
+        const row = e.target.closest("tr[data-ex-idx]");
+        if (!row) return;
+        const idx = parseInt(row.dataset.exIdx, 10);
+        exModal.openModal(exercises[idx], idx, { workout, activeWeek: 0, showClientNote: true });
+      });
 
       viewOverlay.hidden = false;
     }

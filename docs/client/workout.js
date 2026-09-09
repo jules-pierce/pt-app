@@ -2,6 +2,7 @@ import { auth, db } from "../firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { addSignOutButton, checkRole } from "../auth-helpers.js";
+import { setupExerciseModal } from "../exercise-modal.js";
 
 const params    = new URLSearchParams(window.location.search);
 const programId = params.get("program");
@@ -88,114 +89,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   // ── Modal ──────────────────────────────────────────────────────────────────
-  const overlay    = document.getElementById("modal-overlay");
-  const modalClose = document.getElementById("modal-close");
-
-  function openModal(exercise, exIdx) {
-    document.getElementById("modal-number").textContent = exIdx + 1;
-    document.getElementById("modal-name").textContent   = exercise.name;
-
-    const notesSection = document.getElementById("modal-notes-section");
-    const notesEl      = document.getElementById("modal-notes");
-    if (exercise.note) {
-      notesEl.textContent = exercise.note;
-      notesSection.hidden = false;
-    } else {
-      notesSection.hidden = true;
-    }
-
-    const units = exercise.units || "lb";
-
-    const isDone = workout.exercises[exIdx]?.weeks?.[activeWeek]?.done || false;
-    const modalPrescription = document.getElementById("modal-prescription");
-    modalPrescription.innerHTML = `
-      <span class="pill">${exercise.sets} sets</span>
-      <span class="pill">${exercise.reps} reps</span>
-      <button class="btn-done${isDone ? " is-done" : ""}" aria-label="${isDone ? "Mark as not done" : "Mark as done"}">
-        ${isDone ? "✓ Done" : "Done"}
-      </button>
-    `;
-    modalPrescription.querySelector(".btn-done").addEventListener("click", async () => {
-      await toggleDone(activeWeek, exIdx);
-      closeModal();
-    });
-
-    // Weights table across all weeks
-    const weightsContainer = document.getElementById("modal-weights");
-    weightsContainer.innerHTML = "";
-    const table = document.createElement("table");
-    table.className = "weights-table";
-    table.innerHTML = `<thead><tr><th>Week</th><th>RPE</th><th>${units}</th><th></th></tr></thead>`;
-    const tbody = document.createElement("tbody");
-
-    workout.weeks.forEach((week, w) => {
-      const saved     = workout.exercises[exIdx]?.weeks?.[w]?.weight || "";
-      const savedNote = workout.exercises[exIdx]?.weeks?.[w]?.clientNote || "";
-      const activeClass = w === activeWeek ? " active-week" : "";
-
-      const row = document.createElement("tr");
-      row.className = activeClass.trim();
-      const modalSuggestedHint = (w === 0 && exercise.suggestedWeight)
-        ? `<div class="suggested-weight">Suggested start: ${exercise.suggestedWeight}</div>`
-        : "";
-      row.innerHTML = `
-        <td>Week ${w + 1}</td>
-        <td>${week.rpe}</td>
-        <td><input class="weight-table-input" type="text" placeholder="${units}" value="${saved}" />${modalSuggestedHint}</td>
-        <td><button class="add-note-btn">${savedNote ? "hide note" : "show note"}</button></td>
-      `;
-
-      if (savedNote) row.classList.add("note-open");
-
-      const noteRow = document.createElement("tr");
-      noteRow.className = "note-expand-row" + activeClass;
-      noteRow.hidden = !savedNote;
-      noteRow.innerHTML = `<td colspan="4"><textarea class="note-row-textarea" rows="2" placeholder="Add a note for this week…"></textarea></td>`;
-      noteRow.querySelector("textarea").value = savedNote;
-
-      row.querySelector(".add-note-btn").addEventListener("click", (e) => {
-        e.stopPropagation();
-        noteRow.hidden = !noteRow.hidden;
-        row.classList.toggle("note-open", !noteRow.hidden);
-        e.target.textContent = noteRow.hidden ? "show note" : "hide note";
-        if (!noteRow.hidden) noteRow.querySelector("textarea").focus();
-      });
-
-      noteRow.querySelector("textarea").addEventListener("blur", async (e) => {
-        await saveClientNote(w, exIdx, e.target.value);
-      });
-
-      const input = row.querySelector("input");
-      input.addEventListener("blur", async (e) => {
-        const val = e.target.value;
-        await saveWeight(w, exIdx, val);
-        if (w === activeWeek) {
-          const cardInput = document.querySelector(
-            `#exercise-list .exercise-card:nth-child(${exIdx + 1}) .weight-input`
-          );
-          if (cardInput) cardInput.value = val;
-        }
-      });
-
-      tbody.appendChild(row);
-      tbody.appendChild(noteRow);
-    });
-
-    table.appendChild(tbody);
-    weightsContainer.appendChild(table);
-
-    overlay.hidden = false;
-    document.body.style.overflow = "hidden";
-  }
-
-  function closeModal() {
-    overlay.hidden = true;
-    document.body.style.overflow = "";
-  }
-
-  modalClose.addEventListener("click", closeModal);
-  overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+  const exModal = setupExerciseModal();
 
   // ── Exercises ──────────────────────────────────────────────────────────────
   function renderExercises() {
@@ -257,7 +151,23 @@ onAuthStateChanged(auth, async (user) => {
         await toggleDone(activeWeek, exIdx);
       });
 
-      card.addEventListener("click", () => openModal(exercise, exIdx));
+      card.addEventListener("click", () => {
+        exModal.openModal(exercise, exIdx, {
+          workout,
+          activeWeek,
+          onSaveWeight: async (w, i, val) => {
+            await saveWeight(w, i, val);
+            if (w === activeWeek) {
+              const cardInput = document.querySelector(
+                `#exercise-list .exercise-card:nth-child(${i + 1}) .weight-input`
+              );
+              if (cardInput) cardInput.value = val;
+            }
+          },
+          onSaveNote:    saveClientNote,
+          onToggleDone:  toggleDone,
+        });
+      });
       list.appendChild(card);
     });
   }
