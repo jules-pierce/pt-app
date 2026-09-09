@@ -94,11 +94,6 @@ onAuthStateChanged(auth, async (user) => {
   // ── Exercises ──────────────────────────────────────────────────────────────
   function renderExercises() {
     const exercises = workout.exercises;
-    const totalSets = exercises.reduce((sum, ex) => sum + ex.sets, 0);
-
-    document.getElementById("total-exercises").textContent = exercises.length;
-    document.getElementById("total-sets").textContent      = totalSets;
-    document.getElementById("est-time").textContent        = Math.round(totalSets * 2.5) + " min";
 
     const list = document.getElementById("exercise-list");
     list.innerHTML = "";

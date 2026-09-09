@@ -118,9 +118,16 @@ onAuthStateChanged(auth, async (user) => {
     function openViewModal(workout) {
       document.getElementById("view-modal-title").textContent = workout.title || "Untitled";
 
-      const body      = document.getElementById("view-modal-body");
-      const weeks     = workout.weeks     || [];
       const exercises = workout.exercises || [];
+      const setCount  = exercises.reduce((sum, ex) => sum + ex.sets, 0);
+      const pillsEl   = document.getElementById("view-modal-pills");
+      pillsEl.innerHTML = `
+        <span class="pill">${exercises.length} exercise${exercises.length !== 1 ? "s" : ""}</span>
+        <span class="pill">${setCount} sets</span>
+      `;
+
+      const body  = document.getElementById("view-modal-body");
+      const weeks = workout.weeks || [];
 
       if (exercises.length === 0) {
         body.innerHTML = `<p class="empty-state">No exercises.</p>`;
@@ -329,12 +336,16 @@ onAuthStateChanged(auth, async (user) => {
         row.className = "saved-row";
 
         if (workout) {
-          const exCount = workout.exercises?.length ?? 0;
+          const exCount  = workout.exercises?.length ?? 0;
+          const setCount = workout.exercises?.reduce((sum, ex) => sum + ex.sets, 0) ?? 0;
           row.innerHTML = `
             <div class="saved-info">
               <div class="slot-label">Workout ${slotIdx + 1}</div>
               <div class="saved-title">${workout.title || "Untitled"}</div>
-              <div class="saved-meta">${exCount} exercise${exCount !== 1 ? "s" : ""}</div>
+              <div class="saved-pills">
+                <span class="pill">${exCount} exercise${exCount !== 1 ? "s" : ""}</span>
+                <span class="pill">${setCount} sets</span>
+              </div>
             </div>
             <div class="slot-actions">
               <button class="btn-action btn-view">View</button>

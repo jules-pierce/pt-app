@@ -310,6 +310,7 @@ main {
 .saved-title { font-weight: 700; font-size: 0.95rem; }
 .saved-title.empty { color: var(--text-muted); font-weight: 400; }
 .saved-meta  { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem; }
+.saved-pills { display: flex; gap: 0.4rem; margin-top: 0.35rem; flex-wrap: wrap; }
 
 .slot-arrow {
   color: var(--accent-light);
