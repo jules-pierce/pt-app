@@ -54,6 +54,27 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   // ── Client rendering ─────────────────────────────────────────────────────────
+  function firstNotDoneWeek(workout) {
+    const numWeeks = workout.weeks?.length ?? 0;
+    for (let w = 0; w < numWeeks; w++) {
+      const allDone = workout.exercises.length > 0 &&
+        workout.exercises.every(ex => ex.weeks?.[w]?.done);
+      if (!allDone) return w;
+    }
+    return 0;
+  }
+
+  function notDoneWeekCount(workout) {
+    const numWeeks = workout.weeks?.length ?? 0;
+    let count = 0;
+    for (let w = 0; w < numWeeks; w++) {
+      const allDone = workout.exercises.length > 0 &&
+        workout.exercises.every(ex => ex.weeks?.[w]?.done);
+      if (!allDone) count++;
+    }
+    return count;
+  }
+
   function renderClient() {
     const configured = slots.filter(Boolean);
     if (configured.length === 0) {
@@ -61,11 +82,12 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
 
-    slots.forEach((workoutId, slotIdx) => {
-      if (!workoutId) return;
-      const workout = workoutDocs[workoutId];
-      if (!workout) return;
+    const items = slots
+      .map((workoutId, slotIdx) => ({ workoutId, slotIdx, workout: workoutDocs[workoutId] }))
+      .filter(item => item.workoutId && item.workout)
+      .sort((a, b) => notDoneWeekCount(b.workout) - notDoneWeekCount(a.workout));
 
+    items.forEach(({ workoutId, slotIdx, workout }) => {
       const row = document.createElement("div");
       row.className = "saved-row saved-row--clickable";
       row.innerHTML = `
@@ -77,7 +99,8 @@ onAuthStateChanged(auth, async (user) => {
         <span class="slot-arrow">→</span>
       `;
       row.addEventListener("click", () => {
-        window.location.href = `workout.html?program=${programId}&workout=${workoutId}`;
+        const week = firstNotDoneWeek(workout);
+        window.location.href = `workout.html?program=${programId}&workout=${workoutId}&week=${week}`;
       });
       container.appendChild(row);
     });

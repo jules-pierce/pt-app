@@ -42,6 +42,19 @@ onAuthStateChanged(auth, async (user) => {
     await updateDoc(workoutRef, { exercises: workout.exercises });
   }
 
+  function isWeekDone(weekIdx) {
+    return workout.exercises.length > 0 &&
+      workout.exercises.every(ex => ex.weeks?.[weekIdx]?.done);
+  }
+
+  async function toggleDone(weekIdx, exIdx) {
+    const week = workout.exercises[exIdx].weeks[weekIdx];
+    week.done = !week.done;
+    await updateDoc(workoutRef, { exercises: workout.exercises });
+    renderTabs();
+    renderExercises();
+  }
+
   // ── Week tabs ──────────────────────────────────────────────────────────────
   let activeWeek = Math.max(
     0,
@@ -53,9 +66,10 @@ onAuthStateChanged(auth, async (user) => {
   function renderTabs() {
     tabNav.innerHTML = "";
     workout.weeks.forEach((week, i) => {
+      const weekDone = isWeekDone(i);
       const btn = document.createElement("button");
-      btn.className = "week-tab" + (i === activeWeek ? " active" : "");
-      btn.innerHTML = `Week ${i + 1} <span class="tab-rpe">RPE ${week.rpe}</span>`;
+      btn.className = "week-tab" + (i === activeWeek ? " active" : "") + (weekDone ? " week-done" : "");
+      btn.innerHTML = `Week ${i + 1} <span class="tab-rpe">${weekDone ? "✓" : `RPE ${week.rpe}`}</span>`;
       btn.addEventListener("click", () => {
         activeWeek = i;
         const url = new URL(window.location);
@@ -87,10 +101,19 @@ onAuthStateChanged(auth, async (user) => {
 
     const units = exercise.units || "lb";
 
-    document.getElementById("modal-prescription").innerHTML = `
+    const isDone = workout.exercises[exIdx]?.weeks?.[activeWeek]?.done || false;
+    const modalPrescription = document.getElementById("modal-prescription");
+    modalPrescription.innerHTML = `
       <span class="pill">${exercise.sets} sets</span>
       <span class="pill">${exercise.reps} reps</span>
+      <button class="btn-done${isDone ? " is-done" : ""}" aria-label="${isDone ? "Mark as not done" : "Mark as done"}">
+        ${isDone ? "✓ Done" : "Done"}
+      </button>
     `;
+    modalPrescription.querySelector(".btn-done").addEventListener("click", async () => {
+      await toggleDone(activeWeek, exIdx);
+      closeModal();
+    });
 
     // Weights table across all weeks
     const weightsContainer = document.getElementById("modal-weights");
@@ -162,8 +185,10 @@ onAuthStateChanged(auth, async (user) => {
         ? `<span class="suggested-weight">Suggested start: ${exercise.suggestedWeight}</span>`
         : "";
 
+      const isDone = workout.exercises[exIdx]?.weeks?.[activeWeek]?.done || false;
+
       const card = document.createElement("div");
-      card.className    = "exercise-card";
+      card.className    = "exercise-card" + (isDone ? " done" : "");
       card.style.cursor = "pointer";
       card.innerHTML = `
         <div class="exercise-header">
@@ -173,6 +198,9 @@ onAuthStateChanged(auth, async (user) => {
             ${suggestedHint}
           </div>
           <div class="exercise-prescription">
+            <button class="btn-done${isDone ? " is-done" : ""}" aria-label="${isDone ? "Mark as not done" : "Mark as done"}">
+              ${isDone ? "✓" : "Done"}
+            </button>
             <span class="pill">${exercise.sets} sets</span>
             <span class="pill">${exercise.reps} reps</span>
             <input
@@ -191,6 +219,12 @@ onAuthStateChanged(auth, async (user) => {
         await saveWeight(activeWeek, exIdx, e.target.value);
       });
       weightInput.addEventListener("click", (e) => e.stopPropagation());
+
+      card.querySelector(".btn-done").addEventListener("click", async (e) => {
+        e.stopPropagation();
+        await toggleDone(activeWeek, exIdx);
+      });
+
       card.addEventListener("click", () => openModal(exercise, exIdx));
       list.appendChild(card);
     });
