@@ -233,18 +233,24 @@ main {
 
 /* ── Buttons ─────────────────────────────────────────────────────────────── */
 .btn-add {
-  background: none;
-  border: 1px dashed var(--border);
-  border-radius: 6px;
-  color: var(--accent-light);
+  background: var(--oc-gray-6);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
   font-family: var(--font);
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.3rem 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.8rem 1.5rem;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition: opacity 0.15s;
 }
-.btn-add:hover { border-color: var(--accent); color: var(--accent); }
+.btn-add:hover { opacity: 0.85; }
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
 
 .btn-sets-toggle {
   background: none;
