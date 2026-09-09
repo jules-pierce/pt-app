@@ -42,6 +42,11 @@ onAuthStateChanged(auth, async (user) => {
     await updateDoc(workoutRef, { exercises: workout.exercises });
   }
 
+  async function saveClientNote(weekIdx, exIdx, value) {
+    workout.exercises[exIdx].weeks[weekIdx].clientNote = value;
+    await updateDoc(workoutRef, { exercises: workout.exercises });
+  }
+
   function isWeekDone(weekIdx) {
     return workout.exercises.length > 0 &&
       workout.exercises.every(ex => ex.weeks?.[weekIdx]?.done);
@@ -120,13 +125,16 @@ onAuthStateChanged(auth, async (user) => {
     weightsContainer.innerHTML = "";
     const table = document.createElement("table");
     table.className = "weights-table";
-    table.innerHTML = `<thead><tr><th>Week</th><th>RPE</th><th>${units}</th></tr></thead>`;
+    table.innerHTML = `<thead><tr><th>Week</th><th>RPE</th><th>${units}</th><th></th></tr></thead>`;
     const tbody = document.createElement("tbody");
 
     workout.weeks.forEach((week, w) => {
-      const saved = workout.exercises[exIdx]?.weeks?.[w]?.weight || "";
-      const row   = document.createElement("tr");
-      if (w === activeWeek) row.classList.add("active-week");
+      const saved     = workout.exercises[exIdx]?.weeks?.[w]?.weight || "";
+      const savedNote = workout.exercises[exIdx]?.weeks?.[w]?.clientNote || "";
+      const activeClass = w === activeWeek ? " active-week" : "";
+
+      const row = document.createElement("tr");
+      row.className = activeClass.trim();
       const modalSuggestedHint = (w === 0 && exercise.suggestedWeight)
         ? `<div class="suggested-weight">Suggested start: ${exercise.suggestedWeight}</div>`
         : "";
@@ -134,7 +142,29 @@ onAuthStateChanged(auth, async (user) => {
         <td>Week ${w + 1}</td>
         <td>${week.rpe}</td>
         <td><input class="weight-table-input" type="text" placeholder="${units}" value="${saved}" />${modalSuggestedHint}</td>
+        <td><button class="add-note-btn">${savedNote ? "hide note" : "show note"}</button></td>
       `;
+
+      if (savedNote) row.classList.add("note-open");
+
+      const noteRow = document.createElement("tr");
+      noteRow.className = "note-expand-row" + activeClass;
+      noteRow.hidden = !savedNote;
+      noteRow.innerHTML = `<td colspan="4"><textarea class="note-row-textarea" rows="2" placeholder="Add a note for this week…"></textarea></td>`;
+      noteRow.querySelector("textarea").value = savedNote;
+
+      row.querySelector(".add-note-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        noteRow.hidden = !noteRow.hidden;
+        row.classList.toggle("note-open", !noteRow.hidden);
+        e.target.textContent = noteRow.hidden ? "show note" : "hide note";
+        if (!noteRow.hidden) noteRow.querySelector("textarea").focus();
+      });
+
+      noteRow.querySelector("textarea").addEventListener("blur", async (e) => {
+        await saveClientNote(w, exIdx, e.target.value);
+      });
+
       const input = row.querySelector("input");
       input.addEventListener("blur", async (e) => {
         const val = e.target.value;
@@ -146,7 +176,9 @@ onAuthStateChanged(auth, async (user) => {
           if (cardInput) cardInput.value = val;
         }
       });
+
       tbody.appendChild(row);
+      tbody.appendChild(noteRow);
     });
 
     table.appendChild(tbody);
