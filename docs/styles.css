@@ -460,6 +460,7 @@ main {
 .view-table tbody tr { cursor: pointer; }
 .view-table tbody tr:hover { background: var(--surface-2); }
 .view-table td.has-client-note { color: var(--accent-light); }
+.ex-note-inline { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
 
 
 /* ═══════════════════════════════════════════════════════════════════════════

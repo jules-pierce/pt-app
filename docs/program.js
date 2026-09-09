@@ -139,8 +139,11 @@ onAuthStateChanged(auth, async (user) => {
           const hasNote = !!ex.weeks?.[w]?.clientNote;
           return `<td${hasNote ? ' class="has-client-note"' : ""}>${weight}</td>`;
         }).join("");
+        const nameCell = ex.note
+          ? `<td>${ex.name}<div class="ex-note-inline">${ex.note}</div></td>`
+          : `<td>${ex.name}</td>`;
         return `<tr data-ex-idx="${idx}" style="cursor:pointer">
-          <td>${ex.name}</td>
+          ${nameCell}
           <td>${ex.sets}</td>
           <td>${ex.reps}</td>
           <td>${units}</td>
