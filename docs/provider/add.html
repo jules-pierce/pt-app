@@ -16,6 +16,8 @@
   </header>
 
   <main>
+    <button type="button" class="btn-action" id="copy-workout-btn" style="margin-bottom: 1.5rem;">Copy From Previous Workout</button>
+
     <form id="workout-form">
       <div class="form-section">
         <label class="form-label" for="title">Title</label>
@@ -43,6 +45,14 @@
       </div>
     </form>
   </main>
+
+  <div id="copy-workout-overlay" class="view-modal-overlay" hidden>
+    <div class="view-modal">
+      <button type="button" class="modal-close-btn" id="copy-workout-close">✕</button>
+      <h2>Copy From Previous Workout</h2>
+      <div id="copy-workout-list"></div>
+    </div>
+  </div>
 
   <script type="module" src="provider.js"></script>
 </body>

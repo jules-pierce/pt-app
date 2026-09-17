@@ -368,6 +368,9 @@ main {
 
 .saved-row + .saved-row { margin-top: 0.5rem; }
 
+.copy-source-group + .copy-source-group { margin-top: 1.25rem; }
+.copy-source-group .slot-label { margin-bottom: 0.5rem; }
+
 .slot-label {
   font-size: 0.7rem;
   font-weight: 700;
