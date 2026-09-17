@@ -1,5 +1,19 @@
 // Shared exercise × week table — used by the provider's workout "View" modal
 // (read-only) and the client workout page (editable weight + done).
+// Collapses a list of per-week values into "3" (all equal), "3-5" (numeric
+// spread), or "3-5" using first/last order for non-numeric values (e.g. reps
+// like "Max" or "60s").
+function formatRange(values) {
+  const unique = [...new Set(values)];
+  if (unique.length <= 1) return unique[0] ?? "";
+
+  const nums = unique.map(Number);
+  if (nums.every((n) => !Number.isNaN(n))) {
+    return `${Math.min(...nums)}-${Math.max(...nums)}`;
+  }
+  return `${values[0]}-${values[values.length - 1]}`;
+}
+
 export function renderExerciseTable(container, workout, {
   editableWeight = false,
   showDone       = false,
@@ -54,12 +68,25 @@ export function renderExerciseTable(container, workout, {
         ? `<button type="button" class="cell-done-btn${isDone ? " is-done" : ""}" data-week="${w}" aria-label="${isDone ? "Mark not done" : "Mark done"}">${isDone ? "✓" : ""}</button>`
         : "";
 
-      return `<td class="${classes}"><div class="week-cell">${weightEl}${doneBtn}</div></td>`;
+      const valueEl = ex.perWeekSetsReps
+        ? `<div class="week-cell-value"><div class="week-cell-prescription">${weekData.sets ?? ex.sets}×${weekData.reps ?? ex.reps}</div>${weightEl}</div>`
+        : weightEl;
+
+      const cellContent = `<div class="week-cell">${valueEl}${doneBtn}</div>`;
+
+      return `<td class="${classes}">${cellContent}</td>`;
     }).join("");
+
+    const setsCell = ex.perWeekSetsReps
+      ? `<td class="range-cell">${formatRange(weeks.map((_, w) => ex.weeks?.[w]?.sets ?? ex.sets))}</td>`
+      : `<td>${ex.sets}</td>`;
+    const repsCell = ex.perWeekSetsReps
+      ? `<td class="range-cell">${formatRange(weeks.map((_, w) => ex.weeks?.[w]?.reps ?? ex.reps))}</td>`
+      : `<td>${ex.reps}</td>`;
 
     const row = document.createElement("tr");
     row.dataset.exIdx = idx;
-    row.innerHTML = `${nameCell}<td>${ex.sets}</td><td>${ex.reps}</td><td>${units}</td>${weekCells}`;
+    row.innerHTML = `${nameCell}${setsCell}${repsCell}<td>${units}</td>${weekCells}`;
 
     if (editableWeight) {
       row.querySelectorAll(".view-table-weight-input").forEach((input) => {

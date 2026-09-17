@@ -30,6 +30,7 @@ Two separate static apps share the same Firebase project (Firestore + Auth) and 
 | `styles.css` | All styles for both apps |
 | `login.html` + `login.js` | Shared sign-in / sign-up page |
 | `list.js` | Shared programs list logic (role-aware) |
+| `exercise-form-row.js` | Shared exercise-row builder for the provider's Add/Edit workout forms (incl. per-week sets/reps) |
 
 ### Client (`docs/client/`)
 The athlete-facing app. Read-only except for weight inputs.
@@ -96,13 +97,16 @@ Navigation: `index.html` → `program-new.html` → `program.html?id=X` → `add
   exercises: [
     {
       name:        "Bench Press",
-      sets:        4,          // resolved value (default or override)
-      setsOverride: true,      // false = uses defaultSets, true = custom value
-      reps:        5,          // string or number ("Max", "60s", 10, etc.)
+      sets:        4,          // resolved value (default or override); if perWeekSetsReps, mirrors weeks[0].sets
+      setsOverride: true,      // false = uses defaultSets, true = custom value; always false when perWeekSetsReps
+      reps:        5,          // string or number ("Max", "60s", 10, etc.); if perWeekSetsReps, mirrors weeks[0].reps
+      perWeekSetsReps: false,  // true = sets/reps vary per week (see weeks[].sets/reps below)
       note:        "Optional exercise note shown in popup",
-      weeks: [                 // length = program.numWeeks
-        { rpe: 5, weight: "" },
-        { rpe: 6, weight: "135 lbs" },
+      weeks: [                 // length = program.numWeeks; weight only (rpe lives on workout.weeks)
+        { weight: "" },
+        { weight: "135 lbs" },
+        // when perWeekSetsReps is true, each entry also carries its own sets/reps:
+        // { weight: "", sets: 3, reps: "6" },
       ],
     }
   ],
@@ -135,13 +139,14 @@ Navigation: `index.html` → `program-new.html` → `program.html?id=X` → `add
 - `defaultSets` field sets the workout-level default.
 - Each exercise's sets input is disabled (showing the default) until the provider clicks **Override**.
 - Changing `defaultSets` live-updates all non-overriding exercise rows.
+- **+ Add sets & reps per week** (purple button, per exercise) swaps the single Sets/Reps fields for one row per program week, letting the provider set a distinct sets/reps for each week. "Use one value for all weeks" reverts to the single-value fields.
 
 ---
 
 ## Decisions & constraints
 - No framework, no build step. Vanilla JS only.
 - Persistence is Firebase Firestore + Auth.
-- Exercises are stored once per workout. Sets and reps are the same every week; only the logged weight changes week to week.
+- Exercises are stored once per workout. By default sets and reps are the same every week (only the logged weight changes week to week); a provider can opt an exercise into per-week sets/reps (`perWeekSetsReps: true`), which stores a distinct `sets`/`reps` on each entry in that exercise's `weeks` array.
 - The `rpe` for each week is set when the workout is first saved: `5 + weekIndex`. It is preserved on edits.
 - The video in the exercise modal is hardcoded to `videos/video.MOV` (relative to `client/`).
 - Do not add dates to workouts — this was explicitly removed.

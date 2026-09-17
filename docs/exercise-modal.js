@@ -65,10 +65,14 @@ export function setupExerciseModal({ videoSrc = "videos/video.MOV" } = {}) {
       providerNotesSection.hidden = true;
     }
 
+    const activeWeekData = workout.exercises[exIdx]?.weeks?.[activeWeek] || {};
+    const activeSets = exercise.perWeekSetsReps ? (activeWeekData.sets ?? exercise.sets) : exercise.sets;
+    const activeReps = exercise.perWeekSetsReps ? (activeWeekData.reps ?? exercise.reps) : exercise.reps;
+
     const prescriptionEl = overlay.querySelector(".em-prescription");
     prescriptionEl.innerHTML = `
-      <span class="pill">${exercise.sets} sets</span>
-      <span class="pill">${exercise.reps} reps</span>
+      <span class="pill">${activeSets} sets</span>
+      <span class="pill">${activeReps} reps</span>
       ${onToggleDone ? `<button class="btn-done${isDone ? " is-done" : ""}" aria-label="${isDone ? "Mark as not done" : "Mark as done"}">${isDone ? "✓ Done" : "Done"}</button>` : ""}
     `;
     if (onToggleDone) {
@@ -82,15 +86,18 @@ export function setupExerciseModal({ videoSrc = "videos/video.MOV" } = {}) {
     weightsContainer.innerHTML = "";
     const table = document.createElement("table");
     table.className = "weights-table";
-    const hasNoteCol = !!onSaveNote || !!showClientNote;
+    const hasNoteCol   = !!onSaveNote || !!showClientNote;
+    const hasPerWeekCol = !!exercise.perWeekSetsReps;
+    const colCount = 3 + (hasPerWeekCol ? 1 : 0) + (hasNoteCol ? 1 : 0);
     table.innerHTML = `<thead><tr>
-      <th>Week</th><th>RPE</th><th>${units}</th>${hasNoteCol ? "<th></th>" : ""}
+      <th>Week</th><th>RPE</th>${hasPerWeekCol ? "<th>Sets×Reps</th>" : ""}<th>${units}</th>${hasNoteCol ? "<th></th>" : ""}
     </tr></thead>`;
     const tbody = document.createElement("tbody");
 
     workout.weeks.forEach((week, w) => {
-      const saved     = workout.exercises[exIdx]?.weeks?.[w]?.weight || "";
-      const savedNote = workout.exercises[exIdx]?.weeks?.[w]?.clientNote || "";
+      const weekData  = workout.exercises[exIdx]?.weeks?.[w] || {};
+      const saved     = weekData.weight || "";
+      const savedNote = weekData.clientNote || "";
       const isActive  = w === activeWeek;
 
       const row = document.createElement("tr");
@@ -105,6 +112,10 @@ export function setupExerciseModal({ videoSrc = "videos/video.MOV" } = {}) {
         ? `<input class="weight-table-input" type="text" placeholder="${units}" value="${saved}" />`
         : `<span>${saved || "—"}</span>`;
 
+      const perWeekCell = hasPerWeekCol
+        ? `<td>${weekData.sets ?? exercise.sets}×${weekData.reps ?? exercise.reps}</td>`
+        : "";
+
       // Note column: editable button for client, read-only button for provider (only when note exists)
       const noteBtn = onSaveNote
         ? `<button class="add-note-btn">${savedNote ? "hide note" : "show note"}</button>`
@@ -113,6 +124,7 @@ export function setupExerciseModal({ videoSrc = "videos/video.MOV" } = {}) {
       row.innerHTML = `
         <td>Week ${w + 1}</td>
         <td>${week.rpe}</td>
+        ${perWeekCell}
         <td>${weightCell}${suggestedHint}</td>
         ${hasNoteCol ? `<td>${noteBtn}</td>` : ""}
       `;
@@ -124,13 +136,13 @@ export function setupExerciseModal({ videoSrc = "videos/video.MOV" } = {}) {
         noteRow.hidden = !savedNote;
 
         if (onSaveNote) {
-          noteRow.innerHTML = `<td colspan="4"><textarea class="note-row-textarea" rows="2" placeholder="Add a note for this week…"></textarea></td>`;
+          noteRow.innerHTML = `<td colspan="${colCount}"><textarea class="note-row-textarea" rows="2" placeholder="Add a note for this week…"></textarea></td>`;
           noteRow.querySelector("textarea").value = savedNote;
           noteRow.querySelector("textarea").addEventListener("blur", async (e) => {
             await onSaveNote(w, exIdx, e.target.value);
           });
         } else {
-          noteRow.innerHTML = `<td colspan="4"><p class="note-row-readonly">${savedNote}</p></td>`;
+          noteRow.innerHTML = `<td colspan="${colCount}"><p class="note-row-readonly">${savedNote}</p></td>`;
         }
 
         const noteBtn = row.querySelector(".add-note-btn");

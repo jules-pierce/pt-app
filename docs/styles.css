@@ -269,6 +269,76 @@ main {
 
 .ex-sets:disabled { opacity: 0.5; }
 
+.ex-sets-field[hidden],
+.ex-reps-field[hidden] { display: none; }
+
+.btn-per-week {
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-family: var(--font);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: opacity 0.15s;
+}
+.btn-per-week:hover { opacity: 0.85; }
+.btn-per-week[hidden] { display: none; }
+
+.per-week-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+}
+.per-week-rows[hidden] { display: none; }
+
+.per-week-rows-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.2rem;
+}
+
+.btn-per-week-remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+.btn-per-week-remove:hover { color: var(--accent-light); }
+
+.per-week-row {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr 1fr;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.per-week-row-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.per-week-row .form-input {
+  font-size: 0.82rem;
+  padding: 0.3rem 0.5rem;
+}
+
 .btn-save {
   background: var(--accent);
   border: none;
@@ -482,11 +552,26 @@ main {
 .view-table th.active-week,
 .view-table td.active-week { color: var(--accent-light); }
 .ex-note-inline { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+.range-cell { color: var(--text-muted); font-style: italic; }
 
 .week-cell {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
+}
+
+.week-cell-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.week-cell-prescription {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .view-table-weight-input {
