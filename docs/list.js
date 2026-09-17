@@ -2,6 +2,7 @@ import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { collection, query, where, getDocs, doc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { addSignOutButton } from "./auth-helpers.js";
+import { isProgramDone } from "./workout-status.js";
 
 const container = document.getElementById("program-list");
 
@@ -30,14 +31,29 @@ onAuthStateChanged(auth, async (user) => {
   if (snapshot.empty) {
     container.innerHTML = `<p class="empty-state">No programs yet.</p>`;
   } else {
-    snapshot.forEach((docSnap) => {
+    const programs = await Promise.all(snapshot.docs.map(async (docSnap) => {
       const program   = docSnap.data();
       const programId = docSnap.id;
       const slots     = program.workoutSlots || [];
+
+      const workoutDocs = {};
+      await Promise.all(
+        slots.filter(Boolean).map(async (wId) => {
+          const wSnap = await getDoc(doc(db, "programs", programId, "workouts", wId));
+          if (wSnap.exists()) workoutDocs[wId] = wSnap.data();
+        })
+      );
+
+      return { program, programId, slots, done: isProgramDone(slots, workoutDocs) };
+    }));
+
+    programs.sort((a, b) => (a.done === b.done ? 0 : a.done ? 1 : -1));
+
+    programs.forEach(({ program, programId, slots, done }) => {
       const configured = slots.filter(Boolean).length;
 
       const row = document.createElement("div");
-      row.className = "saved-row saved-row--clickable";
+      row.className = "saved-row saved-row--clickable" + (done ? " saved-row--done" : "");
       row.innerHTML = `
         <div class="saved-info">
           <div class="saved-title">${program.title || "Untitled"}</div>

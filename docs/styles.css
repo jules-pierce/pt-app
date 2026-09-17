@@ -394,6 +394,9 @@ main {
 }
 .saved-row--clickable:hover { border-color: var(--accent); background: var(--surface-2); }
 
+.saved-row--done { opacity: 0.5; }
+.saved-row--done:hover { opacity: 0.8; }
+
 .btn-delete {
   background: none;
   border: 1px solid var(--border);
@@ -423,6 +426,44 @@ main {
   transition: border-color 0.15s, color 0.15s;
 }
 .btn-add-workout:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Mark done button (workout & program level) ──────────────────────────── */
+.btn-mark-done {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding: 0.85rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.btn-mark-done:hover { border-color: var(--accent); color: var(--text); }
+.btn-mark-done.is-complete {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn-mark-done.is-complete:hover { opacity: 0.85; }
+
+.mark-done-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.btn-mark-done--inline {
+  display: inline-block;
+  width: auto;
+  margin-bottom: 0;
+  padding: 0.6rem 1.5rem;
+}
 
 /* ── Slot action buttons ─────────────────────────────────────────────────── */
 .slot-actions {
@@ -802,6 +843,19 @@ main {
   color: var(--text);
   white-space: nowrap;
 }
+
+.pill-done-btn {
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.pill-done-btn:hover { border-color: var(--accent); }
+.pill-done-btn.is-complete {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.pill-done-btn.is-complete:hover { opacity: 0.85; }
 
 .weight-input {
   color: var(--green);

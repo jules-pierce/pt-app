@@ -60,7 +60,32 @@ onAuthStateChanged(auth, async (user) => {
     week.done = !week.done;
     await updateDoc(workoutRef, { exercises: workout.exercises });
     renderTable();
+    renderDoneButton();
   }
+
+  // ── Workout-level done button ───────────────────────────────────────────────
+  function isWorkoutDone() {
+    return workout.exercises.length > 0 &&
+      workout.exercises.every((ex) => ex.weeks.every((w) => w.done));
+  }
+
+  const doneBtn = document.getElementById("workout-done-btn");
+
+  function renderDoneButton() {
+    const complete = isWorkoutDone();
+    doneBtn.textContent = complete ? "✓ Workout Done" : "Mark Workout Done";
+    doneBtn.classList.toggle("is-complete", complete);
+  }
+
+  doneBtn.addEventListener("click", async () => {
+    const target = !isWorkoutDone();
+    workout.exercises.forEach((ex) => ex.weeks.forEach((w) => { w.done = target; }));
+    doneBtn.disabled = true;
+    await updateDoc(workoutRef, { exercises: workout.exercises });
+    doneBtn.disabled = false;
+    renderDoneButton();
+    renderTable();
+  });
 
   // ── Modal ──────────────────────────────────────────────────────────────────
   const exModal = setupExerciseModal();
@@ -94,4 +119,5 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   renderTable();
+  renderDoneButton();
 });

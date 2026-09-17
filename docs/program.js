@@ -1,10 +1,11 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { doc, getDoc, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { addSignOutButton } from "./auth-helpers.js";
 import { setupExerciseModal } from "./exercise-modal.js";
 import { renderExerciseTable } from "./exercise-table.js";
 import { addExerciseRow, readExerciseRow } from "./exercise-form-row.js";
+import { isWorkoutDone, isProgramDone } from "./workout-status.js";
 
 const params    = new URLSearchParams(window.location.search);
 const programId = params.get("id");
@@ -50,11 +51,44 @@ onAuthStateChanged(auth, async (user) => {
 
   const container = document.getElementById("workout-slots");
 
+  let refreshList = () => {};
+
   if (role === "provider") {
-    renderProvider();
+    refreshList = renderProvider();
   } else {
     renderClient();
+    refreshList = renderClient;
   }
+
+  // ── Program-level done button ───────────────────────────────────────────────
+  const programDoneBtn = document.getElementById("program-done-btn");
+
+  function renderProgramDoneButton() {
+    const complete = isProgramDone(slots, workoutDocs);
+    programDoneBtn.textContent = complete ? "✓ Program Done" : "Mark Program Done";
+    programDoneBtn.classList.toggle("is-complete", complete);
+  }
+
+  programDoneBtn.addEventListener("click", async () => {
+    const target = !isProgramDone(slots, workoutDocs);
+    const workouts = slots
+      .map((workoutId) => ({ workoutId, workout: workoutId ? workoutDocs[workoutId] : null }))
+      .filter((item) => item.workout);
+
+    const batch = writeBatch(db);
+    workouts.forEach(({ workoutId, workout }) => {
+      workout.exercises.forEach((ex) => ex.weeks.forEach((w) => { w.done = target; }));
+      batch.update(doc(db, "programs", programId, "workouts", workoutId), { exercises: workout.exercises });
+    });
+
+    programDoneBtn.disabled = true;
+    await batch.commit();
+    programDoneBtn.disabled = false;
+    renderProgramDoneButton();
+    refreshList();
+  });
+
+  renderProgramDoneButton();
 
   // ── Client rendering ─────────────────────────────────────────────────────────
   function firstNotDoneWeek(workout) {
@@ -93,6 +127,7 @@ onAuthStateChanged(auth, async (user) => {
     items.forEach(({ workoutId, slotIdx, workout }) => {
       const row = document.createElement("div");
       row.className = "saved-row saved-row--clickable";
+      if (isWorkoutDone(workout)) row.classList.add("saved-row--done");
       row.innerHTML = `
         <div class="saved-info">
           <div class="slot-label">Workout ${slotIdx + 1}</div>
@@ -117,24 +152,44 @@ onAuthStateChanged(auth, async (user) => {
     // View modal
     const viewOverlay = document.getElementById("view-modal-overlay");
 
-    function openViewModal(workout) {
+    function openViewModal(workout, workoutId) {
       document.getElementById("view-modal-title").textContent = workout.title || "Untitled";
 
       const exercises = workout.exercises || [];
       const setCount  = exercises.reduce((sum, ex) => sum + ex.sets, 0);
       const pillsEl   = document.getElementById("view-modal-pills");
-      pillsEl.innerHTML = `
-        <span class="pill">${exercises.length} exercise${exercises.length !== 1 ? "s" : ""}</span>
-        <span class="pill">${setCount} sets</span>
-      `;
+      const body      = document.getElementById("view-modal-body");
 
-      const body = document.getElementById("view-modal-body");
+      function renderBody() {
+        renderExerciseTable(body, workout, {
+          onRowClick: (idx) => {
+            exModal.openModal(exercises[idx], idx, { workout, activeWeek: 0, showClientNote: true });
+          },
+        });
+      }
 
-      renderExerciseTable(body, workout, {
-        onRowClick: (idx) => {
-          exModal.openModal(exercises[idx], idx, { workout, activeWeek: 0, showClientNote: true });
-        },
-      });
+      function renderPills() {
+        const complete = isWorkoutDone(workout);
+        pillsEl.innerHTML = `
+          <span class="pill">${exercises.length} exercise${exercises.length !== 1 ? "s" : ""}</span>
+          <span class="pill">${setCount} sets</span>
+          <button type="button" class="pill pill-done-btn${complete ? " is-complete" : ""}">${complete ? "✓ Done" : "Mark Done"}</button>
+        `;
+        pillsEl.querySelector(".pill-done-btn").addEventListener("click", async (e) => {
+          const target = !isWorkoutDone(workout);
+          workout.exercises.forEach((ex) => ex.weeks.forEach((w) => { w.done = target; }));
+          e.target.disabled = true;
+          await updateDoc(doc(db, "programs", programId, "workouts", workoutId), { exercises: workout.exercises });
+          e.target.disabled = false;
+          renderPills();
+          renderBody();
+          renderSlots();
+          renderProgramDoneButton();
+        });
+      }
+
+      renderPills();
+      renderBody();
 
       viewOverlay.hidden = false;
     }
@@ -227,6 +282,7 @@ onAuthStateChanged(auth, async (user) => {
         workoutDocs[activeWorkoutId] = { ...activeWorkout, title: newTitle, notes: newNotes, defaultSets, exercises };
         editOverlay.hidden = true;
         renderSlots();
+        renderProgramDoneButton();
       } catch (err) {
         alert(`Error: ${err.message}`);
       } finally {
@@ -242,6 +298,7 @@ onAuthStateChanged(auth, async (user) => {
     });
 
     renderSlots();
+    return renderSlots;
 
     function renderSlots() {
       container.innerHTML = "";
@@ -251,6 +308,7 @@ onAuthStateChanged(auth, async (user) => {
         row.className = "saved-row";
 
         if (workout) {
+          if (isWorkoutDone(workout)) row.classList.add("saved-row--done");
           const exCount  = workout.exercises?.length ?? 0;
           const setCount = workout.exercises?.reduce((sum, ex) => sum + ex.sets, 0) ?? 0;
           row.innerHTML = `
@@ -268,7 +326,7 @@ onAuthStateChanged(auth, async (user) => {
             </div>
           `;
           row.querySelector(".btn-edit").addEventListener("click", () => openEditModal(workoutDocs[workoutId], workoutId));
-          row.querySelector(".btn-view").addEventListener("click", () => openViewModal(workoutDocs[workoutId]));
+          row.querySelector(".btn-view").addEventListener("click", () => openViewModal(workoutDocs[workoutId], workoutId));
         } else {
           row.classList.add("saved-row--clickable");
           row.innerHTML = `
