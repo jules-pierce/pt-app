@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Provider — Copy Program</title>
+  <link rel="stylesheet" href="../open-color.css" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <a href="index.html" class="back-link">← Programs</a>
+      <span class="label">Provider</span>
+      <h1>Copy Program</h1>
+    </div>
+  </header>
+
+  <main>
+    <section id="select-section">
+      <label class="form-label" style="display: block; margin-bottom: 0.75rem;">Choose a program to copy</label>
+      <div id="source-list"></div>
+    </section>
+
+    <section id="details-section" hidden>
+      <button type="button" class="btn-action" id="change-source-btn" style="margin-bottom: 1rem;">← Choose a different program</button>
+
+      <div class="saved-row" style="margin-bottom: 1.5rem;">
+        <div class="saved-info">
+          <div class="saved-title" id="source-title"></div>
+          <div class="saved-meta" id="source-meta"></div>
+        </div>
+      </div>
+
+      <form id="copy-form">
+        <div class="form-section">
+          <label class="form-label" for="client-email">Client Email</label>
+          <input class="form-input" id="client-email" type="email" placeholder="client@example.com" required />
+        </div>
+
+        <div class="form-section">
+          <label class="form-label" for="title">Program Title</label>
+          <input class="form-input" id="title" type="text" required />
+        </div>
+
+        <button class="btn-save" type="submit" style="margin-top: 1.5rem;">Copy Program</button>
+      </form>
+    </section>
+  </main>
+
+  <script type="module" src="program-copy.js"></script>
+</body>
+</html>

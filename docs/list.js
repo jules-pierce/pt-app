@@ -83,10 +83,40 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   if (role === "provider") {
-    const link = document.createElement("a");
-    link.href      = "program-new.html";
-    link.className = "btn-add-workout";
-    link.textContent = "+ Create Program";
-    document.querySelector("main").appendChild(link);
+    const addBtn = document.createElement("button");
+    addBtn.type        = "button";
+    addBtn.className   = "btn-add-workout";
+    addBtn.textContent = "+ Create Program";
+    addBtn.addEventListener("click", openCreateChoiceModal);
+    document.querySelector("main").appendChild(addBtn);
   }
 });
+
+function openCreateChoiceModal() {
+  let overlay = document.getElementById("create-choice-overlay");
+
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id        = "create-choice-overlay";
+    overlay.className = "view-modal-overlay";
+    overlay.innerHTML = `
+      <div class="view-modal" style="max-width: 420px;">
+        <button type="button" class="modal-close-btn" id="create-choice-close">✕</button>
+        <h2>Create Program</h2>
+        <div class="choice-options">
+          <a href="program-new.html" class="btn-choice btn-choice--primary">Start From Scratch</a>
+          <a href="program-copy.html" class="btn-choice btn-choice--secondary">Copy an Existing Program</a>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) overlay.hidden = true;
+    });
+    overlay.querySelector("#create-choice-close").addEventListener("click", () => {
+      overlay.hidden = true;
+    });
+  }
+
+  overlay.hidden = false;
+}
