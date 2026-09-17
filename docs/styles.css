@@ -426,6 +426,24 @@ main {
 
 .view-table-wrap { overflow-x: auto; }
 
+/* Edge shadows hinting the table scrolls horizontally. The "local" layers
+   scroll with the table content and match the surrounding background, so
+   they mask the "scroll" layers (pinned to the viewport edge) once you've
+   actually reached that edge — giving a shadow that's always anchored to
+   the edge itself rather than to whatever column happens to be there. */
+.view-table-wrap--scroll-fade {
+  background:
+    linear-gradient(to right, var(--bg) 40%, transparent),
+    linear-gradient(to left,  var(--bg) 40%, transparent) 100% 0,
+    linear-gradient(to right, rgba(0, 0, 0, 0.45), transparent),
+    linear-gradient(to left,  rgba(0, 0, 0, 0.45), transparent) 100% 0;
+  background-repeat: no-repeat;
+  background-color: var(--bg);
+  background-size: 28px 100%, 28px 100%, 12px 100%, 12px 100%;
+  background-position: 0 0, 100% 0, 0 0, 100% 0;
+  background-attachment: local, local, scroll, scroll;
+}
+
 .view-table {
   width: 100%;
   border-collapse: collapse;
@@ -461,7 +479,54 @@ main {
 .view-table tbody tr { cursor: pointer; }
 .view-table tbody tr:hover { background: var(--surface-2); }
 .view-table td.has-client-note { color: var(--accent-light); }
+.view-table th.active-week,
+.view-table td.active-week { color: var(--accent-light); }
 .ex-note-inline { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+.week-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.view-table-weight-input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--green);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.3rem 0.5rem;
+  width: 4.5rem;
+  text-align: center;
+  transition: border-color 0.15s;
+}
+
+.view-table-weight-input::placeholder { color: rgba(56, 217, 169, 0.35); }
+.view-table-weight-input:focus { outline: none; border-color: var(--green); }
+
+.cell-done-btn {
+  flex-shrink: 0;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.cell-done-btn:hover { border-color: var(--accent); color: var(--text); }
+.cell-done-btn.is-done {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+}
+
+.view-table td.cell-done .view-table-weight-input { opacity: 0.5; }
 
 
 /* ═══════════════════════════════════════════════════════════════════════════

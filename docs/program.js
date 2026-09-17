@@ -3,6 +3,7 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/f
 import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { addSignOutButton } from "./auth-helpers.js";
 import { setupExerciseModal } from "./exercise-modal.js";
+import { renderExerciseTable } from "./exercise-table.js";
 
 const params    = new URLSearchParams(window.location.search);
 const programId = params.get("id");
@@ -126,50 +127,12 @@ onAuthStateChanged(auth, async (user) => {
         <span class="pill">${setCount} sets</span>
       `;
 
-      const body  = document.getElementById("view-modal-body");
-      const weeks = workout.weeks || [];
+      const body = document.getElementById("view-modal-body");
 
-      if (exercises.length === 0) {
-        body.innerHTML = `<p class="empty-state">No exercises.</p>`;
-        viewOverlay.hidden = false;
-        return;
-      }
-
-      const weekHeaders = weeks.map((w, i) =>
-        `<th>Wk ${i + 1}<small>RPE ${w.rpe}</small></th>`
-      ).join("");
-
-      const rows = exercises.map((ex, idx) => {
-        const units = ex.units || "lb";
-        const weightCells = weeks.map((_, w) => {
-          const weight  = ex.weeks?.[w]?.weight || "—";
-          const hasNote = !!ex.weeks?.[w]?.clientNote;
-          return `<td${hasNote ? ' class="has-client-note"' : ""}>${weight}</td>`;
-        }).join("");
-        const nameCell = ex.note
-          ? `<td>${ex.name}<div class="ex-note-inline">${ex.note}</div></td>`
-          : `<td>${ex.name}</td>`;
-        return `<tr data-ex-idx="${idx}" style="cursor:pointer">
-          ${nameCell}
-          <td>${ex.sets}</td>
-          <td>${ex.reps}</td>
-          <td>${units}</td>
-          ${weightCells}
-        </tr>`;
-      }).join("");
-
-      body.innerHTML = `
-        <table class="view-table">
-          <thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Units</th>${weekHeaders}</tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      `;
-
-      body.querySelector("tbody").addEventListener("click", (e) => {
-        const row = e.target.closest("tr[data-ex-idx]");
-        if (!row) return;
-        const idx = parseInt(row.dataset.exIdx, 10);
-        exModal.openModal(exercises[idx], idx, { workout, activeWeek: 0, showClientNote: true });
+      renderExerciseTable(body, workout, {
+        onRowClick: (idx) => {
+          exModal.openModal(exercises[idx], idx, { workout, activeWeek: 0, showClientNote: true });
+        },
       });
 
       viewOverlay.hidden = false;
