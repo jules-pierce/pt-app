@@ -436,6 +436,7 @@ main {
   transition: border-color 0.15s, color 0.15s;
 }
 .btn-add-workout:hover { border-color: var(--accent); color: var(--accent); }
+.btn-add-workout[hidden] { display: none; }
 
 .choice-options { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem; }
 
