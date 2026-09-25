@@ -21,6 +21,8 @@ onAuthStateChanged(auth, async (user) => {
   const programSnap = await getDoc(doc(db, "programs", programId));
   if (programSnap.exists()) program = programSnap.data();
 
+  renderRpeRows();
+
   // A placeholder workout has no core exercises: hide that section and drop
   // its "required" attribute (a hidden-but-still-required field can't be
   // focused to show its validation bubble, which makes Chrome silently
@@ -34,14 +36,28 @@ onAuthStateChanged(auth, async (user) => {
 
 const getNumWeeks = () => program?.numWeeks ?? 1;
 
+const rpeRows = document.getElementById("rpe-rows");
+
+function renderRpeRows(rpeValues) {
+  const numWeeks = getNumWeeks();
+  rpeRows.innerHTML = Array.from({ length: numWeeks }, (_, w) => `
+    <div class="per-week-row rpe-row">
+      <span class="per-week-row-label">Wk ${w + 1}</span>
+      <input class="form-input rpe-input" type="number" min="1" max="10" step="0.5" value="${rpeValues?.[w] ?? (5 + w)}" required />
+    </div>
+  `).join("");
+}
+
+const getWeeklyRpe = () => [...rpeRows.querySelectorAll(".rpe-input")].map((input) => parseFloat(input.value));
+
 const warmupSection   = createExerciseSection(
-  document.getElementById("warmup-exercise-rows"), document.getElementById("warmup-default-sets"), getNumWeeks
+  document.getElementById("warmup-exercise-rows"), document.getElementById("warmup-default-sets"), getNumWeeks, getWeeklyRpe
 );
 const coreSection     = createExerciseSection(
-  document.getElementById("exercise-rows"), document.getElementById("default-sets"), getNumWeeks
+  document.getElementById("exercise-rows"), document.getElementById("default-sets"), getNumWeeks, getWeeklyRpe
 );
 const cooldownSection = createExerciseSection(
-  document.getElementById("cooldown-exercise-rows"), document.getElementById("cooldown-default-sets"), getNumWeeks
+  document.getElementById("cooldown-exercise-rows"), document.getElementById("cooldown-default-sets"), getNumWeeks, getWeeklyRpe
 );
 
 document.getElementById("add-warmup-exercise").addEventListener("click", () => warmupSection.addRow());
@@ -128,6 +144,8 @@ async function applyCopySource(sourceProgramId, sourceWorkoutId) {
   document.getElementById("default-sets").value        = workout.defaultSets ?? "";
   document.getElementById("cooldown-default-sets").value = workout.cooldownDefaultSets ?? "";
 
+  renderRpeRows((workout.weeks || []).map((w) => w.rpe));
+
   warmupSection.clear();
   coreSection.clear();
   cooldownSection.clear();
@@ -160,7 +178,7 @@ document.getElementById("workout-form").addEventListener("submit", async (e) => 
     }
 
     const numWeeks = program.numWeeks;
-    const weeks    = Array.from({ length: numWeeks }, (_, i) => ({ rpe: 5 + i }));
+    const weeks    = [...rpeRows.querySelectorAll(".rpe-input")].map((input) => ({ rpe: parseFloat(input.value) }));
 
     const workoutRef = await addDoc(collection(db, "programs", programId, "workouts"), {
       title:                document.getElementById("title").value.trim(),

@@ -101,12 +101,15 @@ Navigation: `index.html` → `program-new.html` → `program.html?id=X` → `add
       setsOverride: true,      // false = uses defaultSets, true = custom value; always false when perWeekSetsReps
       reps:        5,          // string or number ("Max", "60s", 10, etc.); if perWeekSetsReps, mirrors weeks[0].reps
       perWeekSetsReps: false,  // true = sets/reps vary per week (see weeks[].sets/reps below)
+      rpeOverride: false,      // true = this exercise's RPE overrides the workout-level weeks[].rpe (see weeks[].rpe below)
       note:        "Optional exercise note shown in popup",
-      weeks: [                 // length = program.numWeeks; weight only (rpe lives on workout.weeks)
+      weeks: [                 // length = program.numWeeks; weight, plus optional per-exercise overrides
         { weight: "" },
         { weight: "135 lbs" },
         // when perWeekSetsReps is true, each entry also carries its own sets/reps:
         // { weight: "", sets: 3, reps: "6" },
+        // when rpeOverride is true, each entry also carries its own rpe (else falls back to workout.weeks[w].rpe):
+        // { weight: "", rpe: 8 },
       ],
     }
   ],
@@ -125,13 +128,13 @@ Navigation: `index.html` → `program-new.html` → `program.html?id=X` → `add
 ## Key UI details
 
 ### Client workout page
-- **Week tabs** — one per `program.numWeeks`, shows RPE. Switches active week.
+- **Exercise table** (`exercise-table.js`, shared with the provider's View modal) — one column per program week, header shows that week's RPE; the current/next-incomplete week is highlighted. If an exercise has an RPE override, its own RPE for that week is shown as a small badge in the week cell (above the weight), alongside the per-week sets×reps badge when that's also set.
 - **Exercise cards** — clicking opens a modal. Weight input on card stays in sync with modal.
-- **Modal** — shows sets/reps, a weights table across all weeks, an exercise note (if set), and an embedded video (`videos/video.MOV`).
+- **Modal** — shows sets/reps, a weights table across all weeks (RPE column reflects a per-exercise override when set, else the workout-level RPE), an exercise note (if set), and an embedded video (`videos/video.MOV`).
 
 ### Provider program page
 - Each slot starts as `null` and is configured via the add form.
-- Configured slots show **View** (summary table with client weights) and **Edit** (inline modal form) buttons.
+- Configured slots show **View** (summary table with client weights, via the same `exercise-table.js`) and **Edit** (inline modal form) buttons.
 - Unconfigured slots show `+` and navigate to `add.html`.
 - Deleting a program is available on the list page. Deleting individual workouts is not supported (edit instead).
 
@@ -140,6 +143,7 @@ Navigation: `index.html` → `program-new.html` → `program.html?id=X` → `add
 - Each exercise's sets input is disabled (showing the default) until the provider clicks **Override**.
 - Changing `defaultSets` live-updates all non-overriding exercise rows.
 - **+ Add sets & reps per week** (purple button, per exercise) swaps the single Sets/Reps fields for one row per program week, letting the provider set a distinct sets/reps for each week. "Use one value for all weeks" reverts to the single-value fields.
+- **+ Override RPE** (purple button, per exercise) reveals a table of one RPE input per program week for that exercise only, pre-filled from the workout-level Weekly RPE inputs; the table stays collapsed until clicked. "Use workout RPE" collapses it back and the exercise reverts to the workout-level RPE.
 
 ---
 
@@ -147,7 +151,7 @@ Navigation: `index.html` → `program-new.html` → `program.html?id=X` → `add
 - No framework, no build step. Vanilla JS only.
 - Persistence is Firebase Firestore + Auth.
 - Exercises are stored once per workout. By default sets and reps are the same every week (only the logged weight changes week to week); a provider can opt an exercise into per-week sets/reps (`perWeekSetsReps: true`), which stores a distinct `sets`/`reps` on each entry in that exercise's `weeks` array.
-- The `rpe` for each week is set when the workout is first saved: `5 + weekIndex`. It is preserved on edits.
+- The `rpe` for each week is specified by the provider: one input per week on the Add Workout form (pre-filled with `5 + weekIndex` as a starting suggestion) and again on the Edit Workout modal, where it's pre-filled with the workout's current values.
 - The video in the exercise modal is hardcoded to `videos/video.MOV` (relative to `client/`).
 - Do not add dates to workouts — this was explicitly removed.
 - Do not add category labels to exercises — this was explicitly removed.

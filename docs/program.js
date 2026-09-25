@@ -235,18 +235,30 @@ onAuthStateChanged(auth, async (user) => {
 
     const getEditNumWeeks = () => activeWorkout?.weeks?.length ?? program.numWeeks;
 
+    const editRpeRows = document.getElementById("edit-rpe-rows");
+    const getEditWeeklyRpe = () => [...editRpeRows.querySelectorAll(".rpe-input")].map((input) => parseFloat(input.value));
+
     const editWarmupSection = createExerciseSection(
-      document.getElementById("edit-warmup-exercise-rows"), document.getElementById("edit-warmup-default-sets"), getEditNumWeeks
+      document.getElementById("edit-warmup-exercise-rows"), document.getElementById("edit-warmup-default-sets"), getEditNumWeeks, getEditWeeklyRpe
     );
     const editCoreSection = createExerciseSection(
-      document.getElementById("edit-exercise-rows"), document.getElementById("edit-default-sets"), getEditNumWeeks
+      document.getElementById("edit-exercise-rows"), document.getElementById("edit-default-sets"), getEditNumWeeks, getEditWeeklyRpe
     );
     const editCooldownSection = createExerciseSection(
-      document.getElementById("edit-cooldown-exercise-rows"), document.getElementById("edit-cooldown-default-sets"), getEditNumWeeks
+      document.getElementById("edit-cooldown-exercise-rows"), document.getElementById("edit-cooldown-default-sets"), getEditNumWeeks, getEditWeeklyRpe
     );
 
     const editWarmupToggle   = createCollapsibleSection(document.getElementById("edit-show-warmup-btn"), document.getElementById("edit-warmup-box"));
     const editCooldownToggle = createCollapsibleSection(document.getElementById("edit-show-cooldown-btn"), document.getElementById("edit-cooldown-box"));
+
+    function renderEditRpeRows(weeks) {
+      editRpeRows.innerHTML = weeks.map((week, w) => `
+        <div class="per-week-row rpe-row">
+          <span class="per-week-row-label">Wk ${w + 1}</span>
+          <input class="form-input rpe-input" type="number" min="1" max="10" step="0.5" value="${week.rpe ?? ""}" required />
+        </div>
+      `).join("");
+    }
 
     // Opening a section from its placeholder button starts it with one
     // exercise row already in place, rather than an empty list.
@@ -263,6 +275,8 @@ onAuthStateChanged(auth, async (user) => {
       document.getElementById("edit-warmup-default-sets").value   = workout.warmupDefaultSets ?? "";
       document.getElementById("edit-default-sets").value          = workout.defaultSets ?? "";
       document.getElementById("edit-cooldown-default-sets").value = workout.cooldownDefaultSets ?? "";
+
+      renderEditRpeRows(workout.weeks || []);
 
       editWarmupSection.clear();
       editCoreSection.clear();
@@ -303,11 +317,15 @@ onAuthStateChanged(auth, async (user) => {
         const defaultSets         = editCoreSection.getDefaultSets();
         const cooldownDefaultSets = editCooldownSection.getDefaultSets();
 
+        const rpeInputs = [...editRpeRows.querySelectorAll(".rpe-input")];
+        const weeks = activeWorkout.weeks.map((week, i) => ({ ...week, rpe: parseFloat(rpeInputs[i].value) }));
+
         const updated = {
           title: newTitle, notes: newNotes,
           warmupDefaultSets, warmupExercises,
           defaultSets, exercises,
           cooldownDefaultSets, cooldownExercises,
+          weeks,
         };
 
         await updateDoc(doc(db, "programs", programId, "workouts", activeWorkoutId), updated);

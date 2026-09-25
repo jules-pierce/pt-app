@@ -78,8 +78,15 @@ export function renderExerciseTable(container, exercises, weeks, {
         ? `<button type="button" class="cell-done-btn${isDone ? " is-done" : weekSkipped ? " is-skipped" : ""}" data-week="${w}" aria-label="${isDone ? "Mark not done" : "Mark done"}">${isDone ? "✓" : weekSkipped ? "✕" : ""}</button>`
         : "";
 
-      const valueEl = ex.perWeekSetsReps
-        ? `<div class="week-cell-value"><div class="week-cell-prescription">${weekData.sets ?? ex.sets}×${weekData.reps ?? ex.reps}</div>${weightEl}</div>`
+      const prescriptionEl = ex.perWeekSetsReps
+        ? `<div class="week-cell-prescription">${weekData.sets ?? ex.sets}×${weekData.reps ?? ex.reps}</div>`
+        : "";
+      const rpeEl = ex.rpeOverride
+        ? `<div class="week-cell-prescription">RPE ${weekData.rpe ?? ""}</div>`
+        : "";
+
+      const valueEl = (prescriptionEl || rpeEl)
+        ? `<div class="week-cell-value">${prescriptionEl}${rpeEl}${weightEl}</div>`
         : weightEl;
 
       const cellContent = `<div class="week-cell">${valueEl}${doneBtn}</div>`;

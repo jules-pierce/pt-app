@@ -125,7 +125,7 @@ export function setupExerciseModal({ videoSrc = "videos/video.MOV" } = {}) {
 
       row.innerHTML = `
         <td>Week ${w + 1}</td>
-        <td>${week.rpe}</td>
+        <td>${weekData.rpe ?? week.rpe}</td>
         ${perWeekCell}
         <td>${weightCell}${suggestedHint}</td>
         ${hasNoteCol ? `<td>${noteBtn}</td>` : ""}

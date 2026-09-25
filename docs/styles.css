@@ -345,6 +345,8 @@ main {
   padding: 0.3rem 0.5rem;
 }
 
+.per-week-row.rpe-row { grid-template-columns: 2.5rem 1fr; }
+
 .btn-save {
   background: var(--accent);
   border: none;
