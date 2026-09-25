@@ -324,10 +324,32 @@ onAuthStateChanged(auth, async (user) => {
       }
     });
 
+    // Create-workout choice modal
+    const createChoiceOverlay = document.getElementById("create-choice-overlay");
+    let pendingSlotIdx = null;
+
+    function openCreateChoice(slotIdx) {
+      pendingSlotIdx = slotIdx;
+      createChoiceOverlay.hidden = false;
+    }
+
+    document.getElementById("create-choice-close").addEventListener("click", () => { createChoiceOverlay.hidden = true; });
+    createChoiceOverlay.addEventListener("click", (e) => { if (e.target === createChoiceOverlay) createChoiceOverlay.hidden = true; });
+    document.getElementById("create-choice-scratch").addEventListener("click", () => {
+      window.location.href = `add.html?program=${programId}&slot=${pendingSlotIdx}`;
+    });
+    document.getElementById("create-choice-copy").addEventListener("click", () => {
+      window.location.href = `add.html?program=${programId}&slot=${pendingSlotIdx}&copy=1`;
+    });
+    document.getElementById("create-choice-placeholder").addEventListener("click", () => {
+      window.location.href = `add.html?program=${programId}&slot=${pendingSlotIdx}&placeholder=1`;
+    });
+
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
       if (!viewOverlay.hidden) viewOverlay.hidden = true;
       else if (!editOverlay.hidden) editOverlay.hidden = true;
+      else if (!createChoiceOverlay.hidden) createChoiceOverlay.hidden = true;
     });
 
     renderSlots();
@@ -377,9 +399,7 @@ onAuthStateChanged(auth, async (user) => {
             </div>
             <span class="slot-arrow">+</span>
           `;
-          row.addEventListener("click", () => {
-            window.location.href = `add.html?program=${programId}&slot=${slotIdx}`;
-          });
+          row.addEventListener("click", () => openCreateChoice(slotIdx));
         }
 
         container.appendChild(row);

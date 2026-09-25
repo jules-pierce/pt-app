@@ -4,9 +4,10 @@ import { doc, getDoc, getDocs, addDoc, updateDoc, collection, query, where } fro
 import { addSignOutButton, checkRole } from "../auth-helpers.js";
 import { createExerciseSection, buildExercisesWithWeeks, createCollapsibleSection } from "../exercise-form-row.js";
 
-const params    = new URLSearchParams(window.location.search);
-const programId = params.get("program");
-const slotIdx   = parseInt(params.get("slot"), 10);
+const params        = new URLSearchParams(window.location.search);
+const programId     = params.get("program");
+const slotIdx       = parseInt(params.get("slot"), 10);
+const isPlaceholder = params.get("placeholder") === "1";
 
 let currentUser = null;
 let program     = null;
@@ -19,6 +20,16 @@ onAuthStateChanged(auth, async (user) => {
 
   const programSnap = await getDoc(doc(db, "programs", programId));
   if (programSnap.exists()) program = programSnap.data();
+
+  // A placeholder workout has no core exercises: hide that section and drop
+  // its "required" attribute (a hidden-but-still-required field can't be
+  // focused to show its validation bubble, which makes Chrome silently
+  // block the submit instead of saving). Warmup/cooldown stay collapsed
+  // behind their usual + buttons, same as the regular flow.
+  if (isPlaceholder) {
+    document.getElementById("core-workout-box").hidden = true;
+    document.getElementById("default-sets").required = false;
+  }
 });
 
 const getNumWeeks = () => program?.numWeeks ?? 1;
@@ -45,17 +56,18 @@ const cooldownToggle = createCollapsibleSection(document.getElementById("show-co
 document.getElementById("show-warmup-btn").addEventListener("click", () => warmupSection.addRow());
 document.getElementById("show-cooldown-btn").addEventListener("click", () => cooldownSection.addRow());
 
-// ── Copy from a previous workout ────────────────────────────────────────────
-const copyBtn     = document.getElementById("copy-workout-btn");
+// ── Copy from a previous workout (entered via the program page's choice
+// modal, which links here with ?copy=1 — there's no in-page button) ────────
 const copyOverlay = document.getElementById("copy-workout-overlay");
 const copyList    = document.getElementById("copy-workout-list");
 
-copyBtn.addEventListener("click", () => {
-  copyOverlay.hidden = false;
-  loadCopySources();
-});
 document.getElementById("copy-workout-close").addEventListener("click", () => { copyOverlay.hidden = true; });
 copyOverlay.addEventListener("click", (e) => { if (e.target === copyOverlay) copyOverlay.hidden = true; });
+
+if (params.get("copy")) {
+  copyOverlay.hidden = false;
+  loadCopySources();
+}
 
 async function loadCopySources() {
   copyList.innerHTML = `<p class="empty-state">Loading…</p>`;
@@ -141,7 +153,7 @@ document.getElementById("workout-form").addEventListener("submit", async (e) => 
   try {
     const rawExercises = coreSection.readRows();
 
-    if (rawExercises.length === 0) {
+    if (!isPlaceholder && rawExercises.length === 0) {
       submitBtn.disabled    = false;
       submitBtn.textContent = "Save Workout";
       return;

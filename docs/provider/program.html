@@ -109,6 +109,34 @@
     </div>
   </div>
 
+  <div id="create-choice-overlay" class="view-modal-overlay" hidden>
+    <div class="view-modal">
+      <button id="create-choice-close" class="modal-close-btn">✕</button>
+      <h2>Add Workout</h2>
+      <div class="saved-row saved-row--clickable" id="create-choice-scratch">
+        <div class="saved-info">
+          <div class="saved-title">Create From Scratch</div>
+          <div class="saved-meta">Start with a blank workout form</div>
+        </div>
+        <span class="slot-arrow">›</span>
+      </div>
+      <div class="saved-row saved-row--clickable" id="create-choice-copy">
+        <div class="saved-info">
+          <div class="saved-title">Copy From Previous Workout</div>
+          <div class="saved-meta">Start from an existing workout's exercises</div>
+        </div>
+        <span class="slot-arrow">›</span>
+      </div>
+      <div class="saved-row saved-row--clickable" id="create-choice-placeholder">
+        <div class="saved-info">
+          <div class="saved-title">Create Placeholder Workout</div>
+          <div class="saved-meta">Title, notes, warmup, and cooldown only — no core workout</div>
+        </div>
+        <span class="slot-arrow">›</span>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="program.js"></script>
 </body>
 </html>
