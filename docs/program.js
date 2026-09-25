@@ -149,82 +149,45 @@ onAuthStateChanged(auth, async (user) => {
     // Set up exercise detail modal first so its ESC handler takes priority
     const exModal = setupExerciseModal({ videoSrc: "../client/videos/video.MOV" });
 
-    // View modal
-    const viewOverlay = document.getElementById("view-modal-overlay");
-
-    const viewSections = [
-      { key: "warmupExercises",   sectionEl: document.getElementById("view-modal-warmup-section"),   bodyEl: document.getElementById("view-modal-warmup-body") },
-      { key: "exercises",         sectionEl: null,                                                    bodyEl: document.getElementById("view-modal-body") },
-      { key: "cooldownExercises", sectionEl: document.getElementById("view-modal-cooldown-section"),  bodyEl: document.getElementById("view-modal-cooldown-body") },
-    ];
-
-    function openViewModal(workout, workoutId) {
-      document.getElementById("view-modal-title").textContent = workout.title || "Untitled";
-
-      const pillsEl = document.getElementById("view-modal-pills");
-
-      function renderBody() {
-        viewSections.forEach(({ key, sectionEl, bodyEl }) => {
-          const exercises = workout[key] || [];
-          if (sectionEl) sectionEl.hidden = exercises.length === 0;
-          renderExerciseTable(bodyEl, exercises, workout.weeks, {
-            showWeekStatus: true,
-            onRowClick: (idx) => {
-              exModal.openModal(exercises[idx], idx, { exercises, weeks: workout.weeks, activeWeek: 0, showClientNote: true });
-            },
-          });
-        });
-      }
-
-      function renderPills() {
-        const weekIdx   = nextIncompleteWeek(workout);
-        const weekLabel = `Week ${weekIdx + 1}`;
-        const done      = isWeekDone(workout, weekIdx);
-        const skipped   = isWeekSkipped(workout, weekIdx);
-        pillsEl.innerHTML = `
-          <span class="pill">${workoutExerciseCount(workout)} exercise${workoutExerciseCount(workout) !== 1 ? "s" : ""}</span>
-          <span class="pill">${workoutSetCount(workout)} sets</span>
-          <button type="button" class="pill pill-done-btn${done ? " is-complete" : ""}"${skipped ? " hidden" : ""}>${done ? `✓ ${weekLabel} Done` : `Mark ${weekLabel} Done`}</button>
-          <button type="button" class="pill pill-skip-btn${skipped ? " is-skipped" : ""}"${done ? " hidden" : ""}>${skipped ? `✓ ${weekLabel} Skipped` : `Skip ${weekLabel}`}</button>
-        `;
-        pillsEl.querySelector(".pill-done-btn").addEventListener("click", async (e) => {
-          const target = !isWeekDone(workout, weekIdx);
-          const update = {};
-          ["warmupExercises", "exercises", "cooldownExercises"].forEach((key) => {
-            (workout[key] || []).forEach((ex) => { if (ex.weeks[weekIdx]) ex.weeks[weekIdx].done = target; });
-            if (workout[key]) update[key] = workout[key];
-          });
-          if (target && workout.weeks[weekIdx]?.skipped) {
-            workout.weeks[weekIdx].skipped = false;
-            update.weeks = workout.weeks;
-          }
-          e.target.disabled = true;
-          await updateDoc(doc(db, "programs", programId, "workouts", workoutId), update);
-          e.target.disabled = false;
-          renderPills();
-          renderBody();
-          renderSlots();
-          renderProgramDoneButton();
-        });
-        pillsEl.querySelector(".pill-skip-btn").addEventListener("click", async (e) => {
-          workout.weeks[weekIdx] = { ...(workout.weeks[weekIdx] || {}), skipped: !workout.weeks[weekIdx]?.skipped };
-          e.target.disabled = true;
-          await updateDoc(doc(db, "programs", programId, "workouts", workoutId), { weeks: workout.weeks });
-          e.target.disabled = false;
-          renderPills();
-          renderSlots();
-          renderProgramDoneButton();
-        });
-      }
-
-      renderPills();
-      renderBody();
-
-      viewOverlay.hidden = false;
+    // Per-workout "mark week done / skip week" pills, shown inline on each
+    // day card (previously lived inside the now-removed View modal).
+    function weekActionPillsHTML(workout) {
+      const weekIdx   = nextIncompleteWeek(workout);
+      const weekLabel = `Week ${weekIdx + 1}`;
+      const done      = isWeekDone(workout, weekIdx);
+      const skipped   = isWeekSkipped(workout, weekIdx);
+      return `
+        <button type="button" class="pill pill-done-btn${done ? " is-complete" : ""}"${skipped ? " hidden" : ""}>${done ? `✓ ${weekLabel} Done` : `Mark ${weekLabel} Done`}</button>
+        <button type="button" class="pill pill-skip-btn${skipped ? " is-skipped" : ""}"${done ? " hidden" : ""}>${skipped ? `✓ ${weekLabel} Skipped` : `Skip ${weekLabel}`}</button>
+      `;
     }
 
-    document.getElementById("view-modal-close").addEventListener("click", () => { viewOverlay.hidden = true; });
-    viewOverlay.addEventListener("click", (e) => { if (e.target === viewOverlay) viewOverlay.hidden = true; });
+    async function toggleWeekDone(workout, workoutId, btn) {
+      const weekIdx = nextIncompleteWeek(workout);
+      const target  = !isWeekDone(workout, weekIdx);
+      const update  = {};
+      ["warmupExercises", "exercises", "cooldownExercises"].forEach((key) => {
+        (workout[key] || []).forEach((ex) => { if (ex.weeks[weekIdx]) ex.weeks[weekIdx].done = target; });
+        if (workout[key]) update[key] = workout[key];
+      });
+      if (target && workout.weeks[weekIdx]?.skipped) {
+        workout.weeks[weekIdx].skipped = false;
+        update.weeks = workout.weeks;
+      }
+      btn.disabled = true;
+      await updateDoc(doc(db, "programs", programId, "workouts", workoutId), update);
+      renderSlots();
+      renderProgramDoneButton();
+    }
+
+    async function toggleWeekSkipped(workout, workoutId, btn) {
+      const weekIdx = nextIncompleteWeek(workout);
+      workout.weeks[weekIdx] = { ...(workout.weeks[weekIdx] || {}), skipped: !workout.weeks[weekIdx]?.skipped };
+      btn.disabled = true;
+      await updateDoc(doc(db, "programs", programId, "workouts", workoutId), { weeks: workout.weeks });
+      renderSlots();
+      renderProgramDoneButton();
+    }
 
     // Edit modal
     const editOverlay = document.getElementById("edit-modal-overlay");
@@ -365,51 +328,26 @@ onAuthStateChanged(auth, async (user) => {
 
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
-      if (!viewOverlay.hidden) viewOverlay.hidden = true;
-      else if (!editOverlay.hidden) editOverlay.hidden = true;
+      if (!editOverlay.hidden) editOverlay.hidden = true;
       else if (!createChoiceOverlay.hidden) createChoiceOverlay.hidden = true;
     });
 
     renderSlots();
     return renderSlots;
 
+    // Each configured day renders as a stacked card with its full exercise
+    // table(s) inline (replaces the old click-to-open View modal); an Edit
+    // button next to the title still opens the edit form. Days are shown in
+    // slot order, top to bottom.
     function renderSlots() {
       container.innerHTML = "";
-      const items = slots
-        .map((workoutId, slotIdx) => ({ workoutId, slotIdx, workout: workoutId ? workoutDocs[workoutId] : null }))
-        .sort((a, b) => {
-          if (!a.workout && !b.workout) return a.slotIdx - b.slotIdx;
-          if (!a.workout) return 1;
-          if (!b.workout) return -1;
-          return notDoneWeekCount(b.workout) - notDoneWeekCount(a.workout);
-        });
 
-      items.forEach(({ workoutId, slotIdx, workout }) => {
-        const row = document.createElement("div");
-        row.className = "saved-row";
+      slots.forEach((workoutId, slotIdx) => {
+        const workout = workoutId ? workoutDocs[workoutId] : null;
 
-        if (workout) {
-          if (isWorkoutComplete(workout)) row.classList.add("saved-row--done");
-          const exCount  = workoutExerciseCount(workout);
-          const setCount = workoutSetCount(workout);
-          row.innerHTML = `
-            <div class="saved-info">
-              <div class="slot-label">Workout ${slotIdx + 1}</div>
-              <div class="saved-title">${workout.title || "Untitled"}</div>
-              <div class="saved-pills">
-                <span class="pill">${exCount} exercise${exCount !== 1 ? "s" : ""}</span>
-                <span class="pill">${setCount} sets</span>
-              </div>
-            </div>
-            <div class="slot-actions">
-              <button class="btn-action btn-view">View</button>
-              <button class="btn-action btn-action--primary btn-edit">Edit</button>
-            </div>
-          `;
-          row.querySelector(".btn-edit").addEventListener("click", () => openEditModal(workoutDocs[workoutId], workoutId));
-          row.querySelector(".btn-view").addEventListener("click", () => openViewModal(workoutDocs[workoutId], workoutId));
-        } else {
-          row.classList.add("saved-row--clickable");
+        if (!workout) {
+          const row = document.createElement("div");
+          row.className = "saved-row saved-row--clickable";
           row.innerHTML = `
             <div class="saved-info">
               <div class="slot-label">Workout ${slotIdx + 1}</div>
@@ -418,9 +356,70 @@ onAuthStateChanged(auth, async (user) => {
             <span class="slot-arrow">+</span>
           `;
           row.addEventListener("click", () => openCreateChoice(slotIdx));
+          container.appendChild(row);
+          return;
         }
 
-        container.appendChild(row);
+        const card = document.createElement("div");
+        card.className = "day-card";
+        if (isWorkoutComplete(workout)) card.classList.add("day-card--done");
+
+        const exCount  = workoutExerciseCount(workout);
+        const setCount = workoutSetCount(workout);
+        const hasWarmup   = (workout.warmupExercises || []).length > 0;
+        const hasCooldown = (workout.cooldownExercises || []).length > 0;
+
+        card.innerHTML = `
+          <div class="day-card-header">
+            <div class="day-card-info">
+              <div class="slot-label">Workout ${slotIdx + 1}</div>
+              <h2 class="day-card-title">${workout.title || "Untitled"}</h2>
+              <div class="saved-pills">
+                <span class="pill">${exCount} exercise${exCount !== 1 ? "s" : ""}</span>
+                <span class="pill">${setCount} sets</span>
+                ${weekActionPillsHTML(workout)}
+              </div>
+            </div>
+            <div class="slot-actions">
+              <button class="btn-action btn-action--primary btn-edit">Edit</button>
+            </div>
+          </div>
+          <div class="workout-section-box"${hasWarmup ? "" : " hidden"}>
+            <div class="workout-section-title">Warmup</div>
+            <div class="view-table-wrap day-card-warmup-body"></div>
+          </div>
+          <div class="workout-section-box">
+            <div class="workout-section-title">Workout</div>
+            <div class="view-table-wrap day-card-body"></div>
+          </div>
+          <div class="workout-section-box"${hasCooldown ? "" : " hidden"}>
+            <div class="workout-section-title">Cooldown</div>
+            <div class="view-table-wrap day-card-cooldown-body"></div>
+          </div>
+        `;
+
+        [
+          { key: "warmupExercises",   bodyEl: card.querySelector(".day-card-warmup-body") },
+          { key: "exercises",         bodyEl: card.querySelector(".day-card-body") },
+          { key: "cooldownExercises", bodyEl: card.querySelector(".day-card-cooldown-body") },
+        ].forEach(({ key, bodyEl }) => {
+          const exercises = workout[key] || [];
+          renderExerciseTable(bodyEl, exercises, workout.weeks, {
+            showWeekStatus: true,
+            onRowClick: (idx) => {
+              exModal.openModal(exercises[idx], idx, { exercises, weeks: workout.weeks, activeWeek: 0, showClientNote: true });
+            },
+          });
+        });
+
+        card.querySelector(".btn-edit").addEventListener("click", () => openEditModal(workoutDocs[workoutId], workoutId));
+
+        const doneBtn = card.querySelector(".pill-done-btn");
+        if (doneBtn) doneBtn.addEventListener("click", (e) => toggleWeekDone(workout, workoutId, e.target));
+        const skipBtn = card.querySelector(".pill-skip-btn");
+        if (skipBtn) skipBtn.addEventListener("click", (e) => toggleWeekSkipped(workout, workoutId, e.target));
+
+        container.appendChild(card);
       });
     }
   }

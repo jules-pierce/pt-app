@@ -399,8 +399,6 @@ main {
 .saved-meta  { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem; }
 .saved-pills { display: flex; gap: 0.4rem; margin-top: 0.35rem; flex-wrap: wrap; }
 
-/* Extra breathing room before the first boxed section in the workout view modal. */
-#view-modal-pills { margin-bottom: 1.25rem; }
 
 .slot-arrow {
   color: var(--accent-light);
@@ -540,7 +538,27 @@ main {
 .btn-action--primary { border-color: var(--accent); color: var(--accent-light); }
 .btn-action--primary:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-/* ── Provider modals (view / edit) ───────────────────────────────────────── */
+/* ── Provider program page: stacked day cards ────────────────────────────── */
+.day-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.25rem 1.5rem;
+}
+.day-card + .day-card { margin-top: 1.25rem; }
+.day-card--done { opacity: 0.6; }
+
+.day-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.day-card-title { font-size: 1.15rem; font-weight: 800; margin: 0.15rem 0 0; }
+
+/* ── Provider modals (edit) ──────────────────────────────────────────────── */
 .view-modal-overlay {
   position: fixed;
   inset: 0;
