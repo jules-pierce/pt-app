@@ -110,6 +110,9 @@ Navigation: `index.html` → `program-new.html` → `program.html?id=X` → `add
         // { weight: "", sets: 3, reps: "6" },
         // when rpeOverride is true, each entry also carries its own rpe (else falls back to workout.weeks[w].rpe):
         // { weight: "", rpe: 8 },
+        // enabled defaults to true; set to false when the provider deselects this week
+        // for this exercise via "Select weeks" — provider and client views show N/A instead:
+        // { weight: "", enabled: false },
       ],
     }
   ],
@@ -144,6 +147,7 @@ Navigation: `index.html` → `program-new.html` → `program.html?id=X` → `add
 - Changing `defaultSets` live-updates all non-overriding exercise rows.
 - **+ Add sets & reps per week** (purple button, per exercise) swaps the single Sets/Reps fields for one row per program week, letting the provider set a distinct sets/reps for each week. "Use one value for all weeks" reverts to the single-value fields.
 - **+ Override RPE** (purple button, per exercise) reveals a table of one RPE input per program week for that exercise only, pre-filled from the workout-level Weekly RPE inputs; the table stays collapsed until clicked. "Use workout RPE" collapses it back and the exercise reverts to the workout-level RPE.
+- **Select weeks** (purple button, per exercise) expands a checkbox per program week for that exercise, defaulting to all checked (all weeks selected/enabled). Unchecking a week stores `enabled: false` on that exercise's `weeks[w]`; both the provider and client views (`exercise-table.js`, `exercise-modal.js`) show N/A for that exercise/week instead of a weight input. A week with no exercises enabled for it is treated as automatically complete (see `workout-status.js`).
 
 ---
 

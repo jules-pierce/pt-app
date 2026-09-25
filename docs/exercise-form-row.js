@@ -7,6 +7,8 @@ export function addExerciseRow(container, ex, overriding, { getDefaultSets, numW
   const perWeek    = !!ex.perWeekSetsReps;
   const rpeOverride = !!ex.rpeOverride;
   const setsVal    = overriding ? (ex.sets ?? "") : (getDefaultSets() ?? "");
+  const weekEnabled = Array.from({ length: numWeeks }, (_, w) => ex.weeks?.[w]?.enabled !== false);
+  const hasDeselectedWeek = weekEnabled.includes(false);
 
   const card = document.createElement("div");
   card.className = "exercise-row exercise-card-form";
@@ -40,10 +42,22 @@ export function addExerciseRow(container, ex, overriding, { getDefaultSets, numW
         <input class="form-input ex-suggested-weight" type="text" placeholder="e.g. 135 lb" value="${ex.suggestedWeight || ""}" />
       </div>
     </div>
-    <button type="button" class="btn-per-week" ${perWeek ? "hidden" : ""}>+ Add sets &amp; reps per week</button>
-    <div class="per-week-rows" ${perWeek ? "" : "hidden"}></div>
+    <button type="button" class="btn-per-week btn-sets-reps-per-week" ${perWeek ? "hidden" : ""}>+ Add sets &amp; reps per week</button>
+    <div class="per-week-rows sets-reps-per-week-rows" ${perWeek ? "" : "hidden"}></div>
     <button type="button" class="btn-per-week btn-rpe-override" ${rpeOverride ? "hidden" : ""}>+ Override RPE</button>
     <div class="per-week-rows rpe-override-rows" ${rpeOverride ? "" : "hidden"}></div>
+    <button type="button" class="btn-per-week btn-weeks-select">${hasDeselectedWeek ? "Hide weeks" : "Select weeks"}</button>
+    <div class="per-week-rows weeks-select-rows" ${hasDeselectedWeek ? "" : "hidden"}>
+      <div class="per-week-rows-header">
+        <span class="form-label">Weeks this exercise applies to</span>
+      </div>
+      ${Array.from({ length: numWeeks }, (_, w) => `
+        <label class="per-week-row week-select-row">
+          <input type="checkbox" class="week-select-checkbox" data-week="${w}" ${weekEnabled[w] ? "checked" : ""} />
+          <span class="per-week-row-label">Wk ${w + 1}</span>
+        </label>
+      `).join("")}
+    </div>
     <input class="form-input ex-note" type="text" placeholder="Note (optional)" value="${ex.note || ""}" />
   `;
 
@@ -52,8 +66,8 @@ export function addExerciseRow(container, ex, overriding, { getDefaultSets, numW
   const setsInput   = card.querySelector(".ex-sets");
   const repsInput   = card.querySelector(".ex-reps");
   const toggleBtn   = card.querySelector(".btn-sets-toggle");
-  const perWeekBtn  = card.querySelector(".btn-per-week:not(.btn-rpe-override)");
-  const perWeekRows = card.querySelector(".per-week-rows:not(.rpe-override-rows)");
+  const perWeekBtn  = card.querySelector(".btn-sets-reps-per-week");
+  const perWeekRows = card.querySelector(".sets-reps-per-week-rows");
   const rpeOverrideBtn  = card.querySelector(".btn-rpe-override");
   const rpeOverrideRows = card.querySelector(".rpe-override-rows");
 
@@ -147,6 +161,13 @@ export function addExerciseRow(container, ex, overriding, { getDefaultSets, numW
     renderRpeOverrideRows(weeklyRpe);
   }
 
+  const weeksSelectBtn  = card.querySelector(".btn-weeks-select");
+  const weeksSelectRows = card.querySelector(".weeks-select-rows");
+  weeksSelectBtn.addEventListener("click", () => {
+    weeksSelectRows.hidden = !weeksSelectRows.hidden;
+    weeksSelectBtn.textContent = weeksSelectRows.hidden ? "Select weeks" : "Hide weeks";
+  });
+
   card.querySelector(".btn-remove").addEventListener("click", () => card.remove());
   container.appendChild(card);
   return card;
@@ -174,6 +195,8 @@ export function readExerciseRow(row, defaultSets) {
     ? [...row.querySelectorAll(".pw-rpe")].map((i) => parseFloat(i.value))
     : null;
 
+  const weeklyEnabled = [...row.querySelectorAll(".week-select-checkbox")].map((i) => i.checked);
+
   const sets = perWeekSetsReps ? weeklySets[0] : (setsOverride ? parseInt(setsInput.value, 10) : defaultSets);
   const reps = perWeekSetsReps ? weeklyReps[0] : row.querySelector(".ex-reps").value.trim();
 
@@ -190,6 +213,7 @@ export function readExerciseRow(row, defaultSets) {
     weeklyReps,
     rpeOverride,
     weeklyRpe,
+    weeklyEnabled,
   };
 }
 
@@ -246,17 +270,18 @@ export function createCollapsibleSection(toggleBtn, boxEl) {
 // index to preserve existing per-week weight/done/clientNote on edit; omit
 // it when creating a new workout.
 export function buildExercisesWithWeeks(rawExercises, numWeeks, oldExercises) {
-  return rawExercises.map(({ weeklySets, weeklyReps, weeklyRpe, ...ex }, i) => {
+  return rawExercises.map(({ weeklySets, weeklyReps, weeklyRpe, weeklyEnabled, ...ex }, i) => {
     const oldWeeks = oldExercises?.[i]?.weeks;
     return {
       ...ex,
       weeks: Array.from({ length: numWeeks }, (_, w) => {
         const base = oldWeeks?.[w] ?? { weight: "" };
-        const { sets, reps, rpe, ...rest } = base;
+        const { sets, reps, rpe, enabled, ...rest } = base;
         return {
           ...rest,
           ...(ex.perWeekSetsReps ? { sets: weeklySets[w], reps: weeklyReps[w] } : {}),
           ...(ex.rpeOverride ? { rpe: weeklyRpe[w] } : {}),
+          enabled: weeklyEnabled[w] ?? true,
         };
       }),
     };

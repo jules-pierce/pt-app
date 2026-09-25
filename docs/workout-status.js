@@ -12,7 +12,7 @@ export function workoutSections(workout) {
 export function isWeekDone(workout, w) {
   const sections = workoutSections(workout).filter((exercises) => (exercises || []).length > 0);
   return sections.length > 0 &&
-    sections.every((exercises) => exercises.every((ex) => ex.weeks?.[w]?.done));
+    sections.every((exercises) => exercises.every((ex) => ex.weeks?.[w]?.enabled === false || ex.weeks?.[w]?.done));
 }
 
 export function isWeekSkipped(workout, w) {

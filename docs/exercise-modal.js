@@ -97,14 +97,27 @@ export function setupExerciseModal({ videoSrc = "videos/video.MOV" } = {}) {
     const tbody = document.createElement("tbody");
 
     weeks.forEach((week, w) => {
-      const weekData  = exercises[exIdx]?.weeks?.[w] || {};
-      const saved     = weekData.weight || "";
-      const savedNote = weekData.clientNote || "";
-      const isActive  = w === activeWeek;
+      const weekData    = exercises[exIdx]?.weeks?.[w] || {};
+      const weekEnabled = weekData.enabled !== false;
+      const saved       = weekData.weight || "";
+      const savedNote   = weekData.clientNote || "";
+      const isActive    = w === activeWeek;
 
       const row = document.createElement("tr");
       if (isActive) row.classList.add("active-week");
       if (savedNote) row.classList.add("note-open");
+
+      if (!weekEnabled) {
+        row.innerHTML = `
+          <td>Week ${w + 1}</td>
+          <td>${weekData.rpe ?? week.rpe}</td>
+          ${hasPerWeekCol ? "<td>—</td>" : ""}
+          <td><span class="na-value">N/A</span></td>
+          ${hasNoteCol ? "<td></td>" : ""}
+        `;
+        tbody.appendChild(row);
+        return;
+      }
 
       const suggestedHint = (w === 0 && exercise.suggestedWeight)
         ? `<div class="suggested-weight">Suggested start: ${exercise.suggestedWeight}</div>`

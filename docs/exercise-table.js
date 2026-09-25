@@ -34,7 +34,7 @@ export function renderExerciseTable(container, exercises, weeks, {
   }
 
   const weekHeaders = weeks.map((w, i) => {
-    const weekDone    = showWeekStatus && exercises.every((ex) => ex.weeks?.[i]?.done);
+    const weekDone    = showWeekStatus && exercises.every((ex) => ex.weeks?.[i]?.enabled === false || ex.weeks?.[i]?.done);
     const weekSkipped = showWeekStatus && !weekDone && !!w?.skipped;
     const classes = [
       "week-header",
@@ -59,6 +59,7 @@ export function renderExerciseTable(container, exercises, weeks, {
 
     const weekCells = weeks.map((_, w) => {
       const weekData     = ex.weeks?.[w] || {};
+      const weekEnabled  = weekData.enabled !== false;
       const weight       = weekData.weight || "";
       const hasNote      = !!weekData.clientNote;
       const isDone       = !!weekData.done;
@@ -69,6 +70,10 @@ export function renderExerciseTable(container, exercises, weeks, {
         isDone  ? "cell-done" : "",
         w === activeWeek ? "active-week" : "",
       ].filter(Boolean).join(" ");
+
+      if (!weekEnabled) {
+        return `<td class="${classes}"><div class="week-cell"><span class="na-value">N/A</span></div></td>`;
+      }
 
       const weightEl = editableWeight
         ? `<input class="view-table-weight-input" type="text" placeholder="${units}" value="${weight}" data-week="${w}" />`
