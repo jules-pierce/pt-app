@@ -5,7 +5,7 @@ import { addSignOutButton } from "./auth-helpers.js";
 import { setupExerciseModal } from "./exercise-modal.js";
 import { renderExerciseTable } from "./exercise-table.js";
 import { createExerciseSection, buildExercisesWithWeeks, createCollapsibleSection } from "./exercise-form-row.js";
-import { isWorkoutDone, isProgramDone, workoutExerciseCount, workoutSetCount, workoutSections } from "./workout-status.js";
+import { isWeekDone, isWeekSkipped, isWeekComplete, nextIncompleteWeek, isWorkoutComplete, isProgramDone, workoutExerciseCount, workoutSetCount } from "./workout-status.js";
 
 const params    = new URLSearchParams(window.location.search);
 const programId = params.get("id");
@@ -95,15 +95,10 @@ onAuthStateChanged(auth, async (user) => {
   renderProgramDoneButton();
 
   // ── Client rendering ─────────────────────────────────────────────────────────
-  function isWeekDone(workout, w) {
-    const sections = workoutSections(workout).filter((exercises) => (exercises || []).length > 0);
-    return sections.length > 0 && sections.every((exercises) => exercises.every(ex => ex.weeks?.[w]?.done));
-  }
-
   function firstNotDoneWeek(workout) {
     const numWeeks = workout.weeks?.length ?? 0;
     for (let w = 0; w < numWeeks; w++) {
-      if (!isWeekDone(workout, w)) return w;
+      if (!isWeekComplete(workout, w)) return w;
     }
     return 0;
   }
@@ -112,7 +107,7 @@ onAuthStateChanged(auth, async (user) => {
     const numWeeks = workout.weeks?.length ?? 0;
     let count = 0;
     for (let w = 0; w < numWeeks; w++) {
-      if (!isWeekDone(workout, w)) count++;
+      if (!isWeekComplete(workout, w)) count++;
     }
     return count;
   }
@@ -132,7 +127,7 @@ onAuthStateChanged(auth, async (user) => {
     items.forEach(({ workoutId, slotIdx, workout }) => {
       const row = document.createElement("div");
       row.className = "saved-row saved-row--clickable";
-      if (isWorkoutDone(workout)) row.classList.add("saved-row--done");
+      if (isWorkoutComplete(workout)) row.classList.add("saved-row--done");
       row.innerHTML = `
         <div class="saved-info">
           <div class="slot-label">Workout ${slotIdx + 1}</div>
@@ -173,6 +168,7 @@ onAuthStateChanged(auth, async (user) => {
           const exercises = workout[key] || [];
           if (sectionEl) sectionEl.hidden = exercises.length === 0;
           renderExerciseTable(bodyEl, exercises, workout.weeks, {
+            showWeekStatus: true,
             onRowClick: (idx) => {
               exModal.openModal(exercises[idx], idx, { exercises, weeks: workout.weeks, activeWeek: 0, showClientNote: true });
             },
@@ -181,24 +177,41 @@ onAuthStateChanged(auth, async (user) => {
       }
 
       function renderPills() {
-        const complete = isWorkoutDone(workout);
+        const weekIdx   = nextIncompleteWeek(workout);
+        const weekLabel = `Week ${weekIdx + 1}`;
+        const done      = isWeekDone(workout, weekIdx);
+        const skipped   = isWeekSkipped(workout, weekIdx);
         pillsEl.innerHTML = `
           <span class="pill">${workoutExerciseCount(workout)} exercise${workoutExerciseCount(workout) !== 1 ? "s" : ""}</span>
           <span class="pill">${workoutSetCount(workout)} sets</span>
-          <button type="button" class="pill pill-done-btn${complete ? " is-complete" : ""}">${complete ? "✓ Done" : "Mark Done"}</button>
+          <button type="button" class="pill pill-done-btn${done ? " is-complete" : ""}"${skipped ? " hidden" : ""}>${done ? `✓ ${weekLabel} Done` : `Mark ${weekLabel} Done`}</button>
+          <button type="button" class="pill pill-skip-btn${skipped ? " is-skipped" : ""}"${done ? " hidden" : ""}>${skipped ? `✓ ${weekLabel} Skipped` : `Skip ${weekLabel}`}</button>
         `;
         pillsEl.querySelector(".pill-done-btn").addEventListener("click", async (e) => {
-          const target = !isWorkoutDone(workout);
+          const target = !isWeekDone(workout, weekIdx);
           const update = {};
           ["warmupExercises", "exercises", "cooldownExercises"].forEach((key) => {
-            (workout[key] || []).forEach((ex) => ex.weeks.forEach((w) => { w.done = target; }));
+            (workout[key] || []).forEach((ex) => { if (ex.weeks[weekIdx]) ex.weeks[weekIdx].done = target; });
             if (workout[key]) update[key] = workout[key];
           });
+          if (target && workout.weeks[weekIdx]?.skipped) {
+            workout.weeks[weekIdx].skipped = false;
+            update.weeks = workout.weeks;
+          }
           e.target.disabled = true;
           await updateDoc(doc(db, "programs", programId, "workouts", workoutId), update);
           e.target.disabled = false;
           renderPills();
           renderBody();
+          renderSlots();
+          renderProgramDoneButton();
+        });
+        pillsEl.querySelector(".pill-skip-btn").addEventListener("click", async (e) => {
+          workout.weeks[weekIdx] = { ...(workout.weeks[weekIdx] || {}), skipped: !workout.weeks[weekIdx]?.skipped };
+          e.target.disabled = true;
+          await updateDoc(doc(db, "programs", programId, "workouts", workoutId), { weeks: workout.weeks });
+          e.target.disabled = false;
+          renderPills();
           renderSlots();
           renderProgramDoneButton();
         });
@@ -322,13 +335,21 @@ onAuthStateChanged(auth, async (user) => {
 
     function renderSlots() {
       container.innerHTML = "";
-      slots.forEach((workoutId, slotIdx) => {
-        const workout = workoutId ? workoutDocs[workoutId] : null;
+      const items = slots
+        .map((workoutId, slotIdx) => ({ workoutId, slotIdx, workout: workoutId ? workoutDocs[workoutId] : null }))
+        .sort((a, b) => {
+          if (!a.workout && !b.workout) return a.slotIdx - b.slotIdx;
+          if (!a.workout) return 1;
+          if (!b.workout) return -1;
+          return notDoneWeekCount(b.workout) - notDoneWeekCount(a.workout);
+        });
+
+      items.forEach(({ workoutId, slotIdx, workout }) => {
         const row = document.createElement("div");
         row.className = "saved-row";
 
         if (workout) {
-          if (isWorkoutDone(workout)) row.classList.add("saved-row--done");
+          if (isWorkoutComplete(workout)) row.classList.add("saved-row--done");
           const exCount  = workoutExerciseCount(workout);
           const setCount = workoutSetCount(workout);
           row.innerHTML = `

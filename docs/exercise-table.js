@@ -17,6 +17,7 @@ function formatRange(values) {
 export function renderExerciseTable(container, exercises, weeks, {
   editableWeight = false,
   showDone       = false,
+  showWeekStatus = false,
   activeWeek     = null,
   onSaveWeight,   // (weekIdx, exIdx, value)
   onToggleDone,   // (weekIdx, exIdx)
@@ -32,9 +33,16 @@ export function renderExerciseTable(container, exercises, weeks, {
     return;
   }
 
-  const weekHeaders = weeks.map((w, i) =>
-    `<th class="${i === activeWeek ? "active-week" : ""}">Wk ${i + 1}<small>RPE ${w.rpe}</small></th>`
-  ).join("");
+  const weekHeaders = weeks.map((w, i) => {
+    const weekDone    = showWeekStatus && exercises.every((ex) => ex.weeks?.[i]?.done);
+    const weekSkipped = showWeekStatus && !weekDone && !!w?.skipped;
+    const classes = [
+      i === activeWeek ? "active-week" : "",
+      weekDone    ? "week-header-done" : "",
+      weekSkipped ? "week-header-skipped" : "",
+    ].filter(Boolean).join(" ");
+    return `<th class="${classes}">Wk ${i + 1}<small>RPE ${w.rpe}</small></th>`;
+  }).join("");
 
   const table = document.createElement("table");
   table.className = "view-table";
@@ -49,10 +57,11 @@ export function renderExerciseTable(container, exercises, weeks, {
       : `<td>${ex.name}</td>`;
 
     const weekCells = weeks.map((_, w) => {
-      const weekData = ex.weeks?.[w] || {};
-      const weight   = weekData.weight || "";
-      const hasNote  = !!weekData.clientNote;
-      const isDone   = !!weekData.done;
+      const weekData     = ex.weeks?.[w] || {};
+      const weight       = weekData.weight || "";
+      const hasNote      = !!weekData.clientNote;
+      const isDone       = !!weekData.done;
+      const weekSkipped  = !isDone && !!weeks[w]?.skipped;
 
       const classes = [
         hasNote ? "has-client-note" : "",
@@ -62,10 +71,10 @@ export function renderExerciseTable(container, exercises, weeks, {
 
       const weightEl = editableWeight
         ? `<input class="view-table-weight-input" type="text" placeholder="${units}" value="${weight}" data-week="${w}" />`
-        : `<span>${weight || "—"}</span>`;
+        : `<span${weekSkipped && !weight ? ' class="skipped-value"' : ""}>${weight || (weekSkipped ? "✕" : "—")}</span>`;
 
       const doneBtn = showDone
-        ? `<button type="button" class="cell-done-btn${isDone ? " is-done" : ""}" data-week="${w}" aria-label="${isDone ? "Mark not done" : "Mark done"}">${isDone ? "✓" : ""}</button>`
+        ? `<button type="button" class="cell-done-btn${isDone ? " is-done" : weekSkipped ? " is-skipped" : ""}" data-week="${w}" aria-label="${isDone ? "Mark not done" : "Mark done"}">${isDone ? "✓" : weekSkipped ? "✕" : ""}</button>`
         : "";
 
       const valueEl = ex.perWeekSetsReps

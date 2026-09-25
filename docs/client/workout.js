@@ -4,7 +4,7 @@ import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14
 import { addSignOutButton, checkRole } from "../auth-helpers.js";
 import { setupExerciseModal } from "../exercise-modal.js";
 import { renderExerciseTable } from "../exercise-table.js";
-import { isWorkoutDone } from "../workout-status.js";
+import { isWeekDone, isWeekSkipped, nextIncompleteWeek } from "../workout-status.js";
 
 const params    = new URLSearchParams(window.location.search);
 const programId = params.get("program");
@@ -40,7 +40,9 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   // The week to highlight/default into, e.g. from the "jump to next workout" link.
-  const activeWeek = Math.max(
+  // Re-derived after any done/skip change so the highlight tracks whichever
+  // week is next up.
+  let activeWeek = Math.max(
     0,
     Math.min(parseInt(params.get("week") || "0", 10), workout.weeks.length - 1)
   );
@@ -66,6 +68,7 @@ onAuthStateChanged(auth, async (user) => {
       const week = exercises()[exIdx].weeks[weekIdx];
       week.done = !week.done;
       await updateDoc(workoutRef, { [key]: workout[key] });
+      activeWeek = nextIncompleteWeek(workout);
       renderTable();
       renderDoneButton();
     }
@@ -111,25 +114,52 @@ onAuthStateChanged(auth, async (user) => {
     cooldownSection.renderTable();
   }
 
-  // ── Workout-level done button ───────────────────────────────────────────────
+  // ── Workout-level done / skip buttons ───────────────────────────────────────
   const doneBtn = document.getElementById("workout-done-btn");
+  const skipBtn = document.getElementById("workout-skip-btn");
 
   function renderDoneButton() {
-    const complete = isWorkoutDone(workout);
-    doneBtn.textContent = complete ? "✓ Workout Done" : "Mark Workout Done";
-    doneBtn.classList.toggle("is-complete", complete);
+    const weekIdx   = nextIncompleteWeek(workout);
+    const weekLabel = `Week ${weekIdx + 1}`;
+    const done      = isWeekDone(workout, weekIdx);
+    const skipped   = isWeekSkipped(workout, weekIdx);
+
+    doneBtn.textContent = done ? `✓ ${weekLabel} Done` : `Mark ${weekLabel} Done`;
+    doneBtn.classList.toggle("is-complete", done);
+    doneBtn.hidden = skipped;
+
+    skipBtn.textContent = skipped ? `✓ ${weekLabel} Skipped` : `Skip ${weekLabel}`;
+    skipBtn.classList.toggle("is-skipped", skipped);
+    skipBtn.hidden = done;
   }
 
   doneBtn.addEventListener("click", async () => {
-    const target = !isWorkoutDone(workout);
-    const update = {};
+    const weekIdx = nextIncompleteWeek(workout);
+    const target  = !isWeekDone(workout, weekIdx);
+    const update  = {};
     ["warmupExercises", "exercises", "cooldownExercises"].forEach((key) => {
-      (workout[key] || []).forEach((ex) => ex.weeks.forEach((w) => { w.done = target; }));
+      (workout[key] || []).forEach((ex) => { if (ex.weeks[weekIdx]) ex.weeks[weekIdx].done = target; });
       if (workout[key]) update[key] = workout[key];
     });
+    if (target && workout.weeks[weekIdx]?.skipped) {
+      workout.weeks[weekIdx].skipped = false;
+      update.weeks = workout.weeks;
+    }
     doneBtn.disabled = true;
     await updateDoc(workoutRef, update);
     doneBtn.disabled = false;
+    activeWeek = nextIncompleteWeek(workout);
+    renderDoneButton();
+    renderTable();
+  });
+
+  skipBtn.addEventListener("click", async () => {
+    const weekIdx = nextIncompleteWeek(workout);
+    workout.weeks[weekIdx] = { ...(workout.weeks[weekIdx] || {}), skipped: !workout.weeks[weekIdx]?.skipped };
+    skipBtn.disabled = true;
+    await updateDoc(workoutRef, { weeks: workout.weeks });
+    skipBtn.disabled = false;
+    activeWeek = nextIncompleteWeek(workout);
     renderDoneButton();
     renderTable();
   });

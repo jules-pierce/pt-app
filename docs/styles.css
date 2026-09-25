@@ -23,6 +23,8 @@
   --border:       var(--oc-dark-4);
   --green:        var(--oc-teal-4);
   --red:          var(--oc-pink-5);
+  --orange:       var(--oc-orange-5);
+  --yellow:       var(--oc-yellow-5);
   --radius: 12px;
   --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
@@ -484,9 +486,18 @@ main {
 }
 .btn-mark-done.is-complete:hover { opacity: 0.85; }
 
+.btn-mark-done.is-skipped {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff;
+}
+.btn-mark-done.is-skipped:hover { opacity: 0.85; }
+.btn-mark-done[hidden] { display: none; }
+
 .mark-done-footer {
   display: flex;
   justify-content: center;
+  gap: 0.75rem;
   margin-top: 1.5rem;
 }
 
@@ -645,6 +656,8 @@ main {
 .view-table td.has-client-note { color: var(--accent-light); }
 .view-table th.active-week,
 .view-table td.active-week { color: var(--accent-light); }
+.view-table th.week-header-done { color: var(--green); }
+.view-table th.week-header-skipped { color: var(--yellow); }
 .ex-note-inline { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
 .range-cell { color: var(--text-muted); font-style: italic; }
 
@@ -704,8 +717,13 @@ main {
   color: #fff;
   border-color: var(--green);
 }
+.cell-done-btn.is-skipped {
+  color: var(--text-muted);
+  border-color: var(--border);
+}
 
 .view-table td.cell-done .view-table-weight-input { opacity: 0.5; }
+.skipped-value { color: var(--text-muted); }
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -909,6 +927,19 @@ main {
   color: #fff;
 }
 .pill-done-btn.is-complete:hover { opacity: 0.85; }
+
+.pill-skip-btn {
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.pill-skip-btn:hover { border-color: var(--orange); }
+.pill-skip-btn.is-skipped {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff;
+}
+.pill-skip-btn.is-skipped:hover { opacity: 0.85; }
 
 .weight-input {
   color: var(--green);
