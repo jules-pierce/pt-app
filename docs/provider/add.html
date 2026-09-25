@@ -29,18 +29,48 @@
         <textarea class="form-input form-textarea" id="notes" placeholder="Coaching notes shown at the top of the workout…" rows="3"></textarea>
       </div>
 
-      <div class="form-section">
-        <label class="form-label" for="default-sets">Default sets</label>
-        <input class="form-input" id="default-sets" type="number" min="1" placeholder="e.g. 3" required />
+      <button type="button" class="btn-add-workout" id="show-warmup-btn">+ Add Warmup</button>
+      <div class="workout-section-box" id="warmup-box" hidden>
+        <div class="workout-section-title">Warmup</div>
+        <div class="form-section">
+          <label class="form-label" for="warmup-default-sets">Default sets <span class="optional">(optional)</span></label>
+          <input class="form-input" id="warmup-default-sets" type="number" min="1" placeholder="e.g. 1" />
+        </div>
+        <div class="form-section">
+          <label class="form-label">Exercises <span class="optional">(optional)</span></label>
+          <div id="warmup-exercise-rows"></div>
+          <button type="button" class="btn-add" id="add-warmup-exercise">+ Add Warmup Exercise</button>
+        </div>
       </div>
 
-      <div class="form-section">
-        <label class="form-label">Exercises</label>
-        <div id="exercise-rows"></div>
+      <div class="workout-section-box">
+        <div class="workout-section-title">Workout</div>
+        <div class="form-section">
+          <label class="form-label" for="default-sets">Default sets</label>
+          <input class="form-input" id="default-sets" type="number" min="1" placeholder="e.g. 3" required />
+        </div>
+        <div class="form-section">
+          <label class="form-label">Exercises</label>
+          <div id="exercise-rows"></div>
+          <button type="button" class="btn-add" id="add-exercise">+ Add Exercise</button>
+        </div>
+      </div>
+
+      <button type="button" class="btn-add-workout" id="show-cooldown-btn">+ Add Cooldown</button>
+      <div class="workout-section-box" id="cooldown-box" hidden>
+        <div class="workout-section-title">Cooldown</div>
+        <div class="form-section">
+          <label class="form-label" for="cooldown-default-sets">Default sets <span class="optional">(optional)</span></label>
+          <input class="form-input" id="cooldown-default-sets" type="number" min="1" placeholder="e.g. 1" />
+        </div>
+        <div class="form-section">
+          <label class="form-label">Exercises <span class="optional">(optional)</span></label>
+          <div id="cooldown-exercise-rows"></div>
+          <button type="button" class="btn-add" id="add-cooldown-exercise">+ Add Cooldown Exercise</button>
+        </div>
       </div>
 
       <div class="form-actions">
-        <button type="button" class="btn-add" id="add-exercise">+ Add Exercise</button>
         <button class="btn-save" type="submit">Save Workout</button>
       </div>
     </form>

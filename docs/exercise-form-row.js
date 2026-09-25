@@ -147,3 +147,70 @@ export function readExerciseRow(row, defaultSets) {
     weeklyReps,
   };
 }
+
+// Wires up one exercise section (core / warmup / cooldown) of a workout
+// form: its default-sets input plus its container of exercise rows. Used by
+// the add and edit workout forms, one instance per section.
+export function createExerciseSection(rowsContainer, defaultSetsInput, getNumWeeks) {
+  function getDefaultSets() {
+    return parseInt(defaultSetsInput.value, 10) || null;
+  }
+
+  defaultSetsInput.addEventListener("input", () => {
+    const val = getDefaultSets();
+    rowsContainer.querySelectorAll(".exercise-row").forEach((row) => {
+      const input = row.querySelector(".ex-sets");
+      if (input.disabled) input.value = val ?? "";
+    });
+  });
+
+  function addRow(ex = {}, overriding = false) {
+    return addExerciseRow(rowsContainer, ex, overriding, { getDefaultSets, numWeeks: getNumWeeks() });
+  }
+
+  function readRows() {
+    const defaultSets = getDefaultSets();
+    return [...rowsContainer.querySelectorAll(".exercise-row")].map((row) => readExerciseRow(row, defaultSets));
+  }
+
+  function clear() {
+    rowsContainer.innerHTML = "";
+  }
+
+  return { getDefaultSets, addRow, readRows, clear };
+}
+
+// Wires up a collapsed-by-default section: a placeholder button that, when
+// clicked, hides itself and reveals the section's box (e.g. "+ Add Warmup").
+// Used for the optional warmup/cooldown sections on the workout forms.
+export function createCollapsibleSection(toggleBtn, boxEl) {
+  function expand() {
+    toggleBtn.hidden = true;
+    boxEl.hidden = false;
+  }
+  function collapse() {
+    toggleBtn.hidden = false;
+    boxEl.hidden = true;
+  }
+  toggleBtn.addEventListener("click", expand);
+  return { expand, collapse };
+}
+
+// Turns raw readExerciseRow() results into stored exercise objects with a
+// `weeks` array. `oldExercises` (same section, previous save) is matched by
+// index to preserve existing per-week weight/done/clientNote on edit; omit
+// it when creating a new workout.
+export function buildExercisesWithWeeks(rawExercises, numWeeks, oldExercises) {
+  return rawExercises.map(({ weeklySets, weeklyReps, ...ex }, i) => {
+    const oldWeeks = oldExercises?.[i]?.weeks;
+    return {
+      ...ex,
+      weeks: Array.from({ length: numWeeks }, (_, w) => {
+        const base = oldWeeks?.[w] ?? { weight: "" };
+        if (ex.perWeekSetsReps) return { ...base, sets: weeklySets[w], reps: weeklyReps[w] };
+        const { sets, reps, ...rest } = base;
+        return rest;
+      }),
+    };
+  });
+}

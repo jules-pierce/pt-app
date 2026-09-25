@@ -4,6 +4,7 @@ import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14
 import { addSignOutButton, checkRole } from "../auth-helpers.js";
 import { setupExerciseModal } from "../exercise-modal.js";
 import { renderExerciseTable } from "../exercise-table.js";
+import { isWorkoutDone } from "../workout-status.js";
 
 const params    = new URLSearchParams(window.location.search);
 const programId = params.get("program");
@@ -44,79 +45,94 @@ onAuthStateChanged(auth, async (user) => {
     Math.min(parseInt(params.get("week") || "0", 10), workout.weeks.length - 1)
   );
 
-  // ── Weight persistence ─────────────────────────────────────────────────────
-  async function saveWeight(weekIdx, exIdx, value) {
-    workout.exercises[exIdx].weeks[weekIdx].weight = value;
-    await updateDoc(workoutRef, { exercises: workout.exercises });
+  // ── Modal ──────────────────────────────────────────────────────────────────
+  const exModal = setupExerciseModal();
+
+  // ── Exercise sections (warmup / core / cooldown) ────────────────────────────
+  function makeSection(key, sectionEl, tableContainer) {
+    const exercises = () => workout[key] || [];
+
+    async function saveWeight(weekIdx, exIdx, value) {
+      exercises()[exIdx].weeks[weekIdx].weight = value;
+      await updateDoc(workoutRef, { [key]: workout[key] });
+    }
+
+    async function saveClientNote(weekIdx, exIdx, value) {
+      exercises()[exIdx].weeks[weekIdx].clientNote = value;
+      await updateDoc(workoutRef, { [key]: workout[key] });
+    }
+
+    async function toggleDone(weekIdx, exIdx) {
+      const week = exercises()[exIdx].weeks[weekIdx];
+      week.done = !week.done;
+      await updateDoc(workoutRef, { [key]: workout[key] });
+      renderTable();
+      renderDoneButton();
+    }
+
+    function renderTable() {
+      const exs = exercises();
+      if (sectionEl) sectionEl.hidden = exs.length === 0;
+      renderExerciseTable(tableContainer, exs, workout.weeks, {
+        editableWeight: true,
+        showDone:       true,
+        activeWeek,
+        onSaveWeight:   saveWeight,
+        onToggleDone:   toggleDone,
+        onRowClick: (exIdx) => {
+          exModal.openModal(exs[exIdx], exIdx, {
+            exercises: exs,
+            weeks: workout.weeks,
+            activeWeek,
+            onSaveWeight: async (w, i, val) => {
+              await saveWeight(w, i, val);
+              renderTable();
+            },
+            onSaveNote: async (w, i, val) => {
+              await saveClientNote(w, i, val);
+              renderTable();
+            },
+            onToggleDone: toggleDone,
+          });
+        },
+      });
+    }
+
+    return { renderTable };
   }
 
-  async function saveClientNote(weekIdx, exIdx, value) {
-    workout.exercises[exIdx].weeks[weekIdx].clientNote = value;
-    await updateDoc(workoutRef, { exercises: workout.exercises });
-  }
+  const warmupSection   = makeSection("warmupExercises", document.getElementById("warmup-section"), document.getElementById("warmup-table"));
+  const coreSection     = makeSection("exercises", null, document.getElementById("exercise-table"));
+  const cooldownSection = makeSection("cooldownExercises", document.getElementById("cooldown-section"), document.getElementById("cooldown-table"));
 
-  async function toggleDone(weekIdx, exIdx) {
-    const week = workout.exercises[exIdx].weeks[weekIdx];
-    week.done = !week.done;
-    await updateDoc(workoutRef, { exercises: workout.exercises });
-    renderTable();
-    renderDoneButton();
+  function renderTable() {
+    warmupSection.renderTable();
+    coreSection.renderTable();
+    cooldownSection.renderTable();
   }
 
   // ── Workout-level done button ───────────────────────────────────────────────
-  function isWorkoutDone() {
-    return workout.exercises.length > 0 &&
-      workout.exercises.every((ex) => ex.weeks.every((w) => w.done));
-  }
-
   const doneBtn = document.getElementById("workout-done-btn");
 
   function renderDoneButton() {
-    const complete = isWorkoutDone();
+    const complete = isWorkoutDone(workout);
     doneBtn.textContent = complete ? "✓ Workout Done" : "Mark Workout Done";
     doneBtn.classList.toggle("is-complete", complete);
   }
 
   doneBtn.addEventListener("click", async () => {
-    const target = !isWorkoutDone();
-    workout.exercises.forEach((ex) => ex.weeks.forEach((w) => { w.done = target; }));
+    const target = !isWorkoutDone(workout);
+    const update = {};
+    ["warmupExercises", "exercises", "cooldownExercises"].forEach((key) => {
+      (workout[key] || []).forEach((ex) => ex.weeks.forEach((w) => { w.done = target; }));
+      if (workout[key]) update[key] = workout[key];
+    });
     doneBtn.disabled = true;
-    await updateDoc(workoutRef, { exercises: workout.exercises });
+    await updateDoc(workoutRef, update);
     doneBtn.disabled = false;
     renderDoneButton();
     renderTable();
   });
-
-  // ── Modal ──────────────────────────────────────────────────────────────────
-  const exModal = setupExerciseModal();
-
-  // ── Exercise table ───────────────────────────────────────────────────────────
-  const tableContainer = document.getElementById("exercise-table");
-
-  function renderTable() {
-    renderExerciseTable(tableContainer, workout, {
-      editableWeight: true,
-      showDone:       true,
-      activeWeek,
-      onSaveWeight:   saveWeight,
-      onToggleDone:   toggleDone,
-      onRowClick: (exIdx) => {
-        exModal.openModal(workout.exercises[exIdx], exIdx, {
-          workout,
-          activeWeek,
-          onSaveWeight: async (w, i, val) => {
-            await saveWeight(w, i, val);
-            renderTable();
-          },
-          onSaveNote: async (w, i, val) => {
-            await saveClientNote(w, i, val);
-            renderTable();
-          },
-          onToggleDone: toggleDone,
-        });
-      },
-    });
-  }
 
   renderTable();
   renderDoneButton();

@@ -2,7 +2,7 @@ import { auth, db } from "../firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, getDoc, getDocs, addDoc, updateDoc, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { addSignOutButton, checkRole } from "../auth-helpers.js";
-import { addExerciseRow, readExerciseRow } from "../exercise-form-row.js";
+import { createExerciseSection, buildExercisesWithWeeks, createCollapsibleSection } from "../exercise-form-row.js";
 
 const params    = new URLSearchParams(window.location.search);
 const programId = params.get("program");
@@ -21,24 +21,29 @@ onAuthStateChanged(auth, async (user) => {
   if (programSnap.exists()) program = programSnap.data();
 });
 
-const exerciseRows    = document.getElementById("exercise-rows");
-const defaultSetsInput = document.getElementById("default-sets");
+const getNumWeeks = () => program?.numWeeks ?? 1;
 
-function getDefaultSets() {
-  return parseInt(defaultSetsInput.value, 10) || null;
-}
+const warmupSection   = createExerciseSection(
+  document.getElementById("warmup-exercise-rows"), document.getElementById("warmup-default-sets"), getNumWeeks
+);
+const coreSection     = createExerciseSection(
+  document.getElementById("exercise-rows"), document.getElementById("default-sets"), getNumWeeks
+);
+const cooldownSection = createExerciseSection(
+  document.getElementById("cooldown-exercise-rows"), document.getElementById("cooldown-default-sets"), getNumWeeks
+);
 
-defaultSetsInput.addEventListener("input", () => {
-  const val = getDefaultSets();
-  exerciseRows.querySelectorAll(".exercise-row").forEach((row) => {
-    const input = row.querySelector(".ex-sets");
-    if (input.disabled) input.value = val ?? "";
-  });
-});
+document.getElementById("add-warmup-exercise").addEventListener("click", () => warmupSection.addRow());
+document.getElementById("add-exercise").addEventListener("click", () => coreSection.addRow());
+document.getElementById("add-cooldown-exercise").addEventListener("click", () => cooldownSection.addRow());
 
-document.getElementById("add-exercise").addEventListener("click", () => {
-  addExerciseRow(exerciseRows, {}, false, { getDefaultSets, numWeeks: program?.numWeeks ?? 1 });
-});
+const warmupToggle   = createCollapsibleSection(document.getElementById("show-warmup-btn"), document.getElementById("warmup-box"));
+const cooldownToggle = createCollapsibleSection(document.getElementById("show-cooldown-btn"), document.getElementById("cooldown-box"));
+
+// Opening a section from its placeholder button starts it with one exercise
+// row already in place, rather than an empty list.
+document.getElementById("show-warmup-btn").addEventListener("click", () => warmupSection.addRow());
+document.getElementById("show-cooldown-btn").addEventListener("click", () => cooldownSection.addRow());
 
 // ── Copy from a previous workout ────────────────────────────────────────────
 const copyBtn     = document.getElementById("copy-workout-btn");
@@ -106,13 +111,21 @@ async function applyCopySource(sourceProgramId, sourceWorkoutId) {
 
   document.getElementById("title").value = workout.title || "";
   document.getElementById("notes").value = workout.notes || "";
-  defaultSetsInput.value = workout.defaultSets ?? "";
-  exerciseRows.innerHTML = "";
 
-  (workout.exercises || []).forEach((ex) => {
-    const overriding = ex.setsOverride !== false;
-    addExerciseRow(exerciseRows, ex, overriding, { getDefaultSets, numWeeks: program?.numWeeks ?? 1 });
-  });
+  document.getElementById("warmup-default-sets").value = workout.warmupDefaultSets ?? "";
+  document.getElementById("default-sets").value        = workout.defaultSets ?? "";
+  document.getElementById("cooldown-default-sets").value = workout.cooldownDefaultSets ?? "";
+
+  warmupSection.clear();
+  coreSection.clear();
+  cooldownSection.clear();
+
+  (workout.warmupExercises || []).forEach((ex) => warmupSection.addRow(ex, ex.setsOverride !== false));
+  (workout.exercises || []).forEach((ex) => coreSection.addRow(ex, ex.setsOverride !== false));
+  (workout.cooldownExercises || []).forEach((ex) => cooldownSection.addRow(ex, ex.setsOverride !== false));
+
+  if ((workout.warmupExercises || []).length > 0) warmupToggle.expand(); else warmupToggle.collapse();
+  if ((workout.cooldownExercises || []).length > 0) cooldownToggle.expand(); else cooldownToggle.collapse();
 
   copyOverlay.hidden = true;
 }
@@ -126,32 +139,26 @@ document.getElementById("workout-form").addEventListener("submit", async (e) => 
   submitBtn.textContent = "Saving…";
 
   try {
-    const defaultSets = getDefaultSets();
+    const rawExercises = coreSection.readRows();
 
-    const exercises = [...exerciseRows.querySelectorAll(".exercise-row")].map((row) =>
-      readExerciseRow(row, defaultSets)
-    );
-
-    if (exercises.length === 0) {
+    if (rawExercises.length === 0) {
       submitBtn.disabled    = false;
       submitBtn.textContent = "Save Workout";
       return;
     }
 
-    const weeks = Array.from({ length: program.numWeeks }, (_, i) => ({ rpe: 5 + i }));
-
-    const exercisesWithWeeks = exercises.map(({ weeklySets, weeklyReps, ...ex }) => ({
-      ...ex,
-      weeks: Array.from({ length: program.numWeeks }, (_, w) =>
-        ex.perWeekSetsReps ? { weight: "", sets: weeklySets[w], reps: weeklyReps[w] } : { weight: "" }
-      ),
-    }));
+    const numWeeks = program.numWeeks;
+    const weeks    = Array.from({ length: numWeeks }, (_, i) => ({ rpe: 5 + i }));
 
     const workoutRef = await addDoc(collection(db, "programs", programId, "workouts"), {
-      title:      document.getElementById("title").value.trim(),
-      notes:      document.getElementById("notes").value.trim(),
-      defaultSets,
-      exercises:  exercisesWithWeeks,
+      title:                document.getElementById("title").value.trim(),
+      notes:                document.getElementById("notes").value.trim(),
+      warmupDefaultSets:    warmupSection.getDefaultSets(),
+      warmupExercises:      buildExercisesWithWeeks(warmupSection.readRows(), numWeeks),
+      defaultSets:          coreSection.getDefaultSets(),
+      exercises:            buildExercisesWithWeeks(rawExercises, numWeeks),
+      cooldownDefaultSets:  cooldownSection.getDefaultSets(),
+      cooldownExercises:    buildExercisesWithWeeks(cooldownSection.readRows(), numWeeks),
       weeks,
     });
 

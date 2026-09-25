@@ -4,8 +4,8 @@ import { doc, getDoc, updateDoc, writeBatch } from "https://www.gstatic.com/fire
 import { addSignOutButton } from "./auth-helpers.js";
 import { setupExerciseModal } from "./exercise-modal.js";
 import { renderExerciseTable } from "./exercise-table.js";
-import { addExerciseRow, readExerciseRow } from "./exercise-form-row.js";
-import { isWorkoutDone, isProgramDone } from "./workout-status.js";
+import { createExerciseSection, buildExercisesWithWeeks, createCollapsibleSection } from "./exercise-form-row.js";
+import { isWorkoutDone, isProgramDone, workoutExerciseCount, workoutSetCount, workoutSections } from "./workout-status.js";
 
 const params    = new URLSearchParams(window.location.search);
 const programId = params.get("id");
@@ -77,8 +77,12 @@ onAuthStateChanged(auth, async (user) => {
 
     const batch = writeBatch(db);
     workouts.forEach(({ workoutId, workout }) => {
-      workout.exercises.forEach((ex) => ex.weeks.forEach((w) => { w.done = target; }));
-      batch.update(doc(db, "programs", programId, "workouts", workoutId), { exercises: workout.exercises });
+      const update = {};
+      ["warmupExercises", "exercises", "cooldownExercises"].forEach((key) => {
+        (workout[key] || []).forEach((ex) => ex.weeks.forEach((w) => { w.done = target; }));
+        if (workout[key]) update[key] = workout[key];
+      });
+      batch.update(doc(db, "programs", programId, "workouts", workoutId), update);
     });
 
     programDoneBtn.disabled = true;
@@ -91,12 +95,15 @@ onAuthStateChanged(auth, async (user) => {
   renderProgramDoneButton();
 
   // ── Client rendering ─────────────────────────────────────────────────────────
+  function isWeekDone(workout, w) {
+    const sections = workoutSections(workout).filter((exercises) => (exercises || []).length > 0);
+    return sections.length > 0 && sections.every((exercises) => exercises.every(ex => ex.weeks?.[w]?.done));
+  }
+
   function firstNotDoneWeek(workout) {
     const numWeeks = workout.weeks?.length ?? 0;
     for (let w = 0; w < numWeeks; w++) {
-      const allDone = workout.exercises.length > 0 &&
-        workout.exercises.every(ex => ex.weeks?.[w]?.done);
-      if (!allDone) return w;
+      if (!isWeekDone(workout, w)) return w;
     }
     return 0;
   }
@@ -105,9 +112,7 @@ onAuthStateChanged(auth, async (user) => {
     const numWeeks = workout.weeks?.length ?? 0;
     let count = 0;
     for (let w = 0; w < numWeeks; w++) {
-      const allDone = workout.exercises.length > 0 &&
-        workout.exercises.every(ex => ex.weeks?.[w]?.done);
-      if (!allDone) count++;
+      if (!isWeekDone(workout, w)) count++;
     }
     return count;
   }
@@ -132,7 +137,7 @@ onAuthStateChanged(auth, async (user) => {
         <div class="saved-info">
           <div class="slot-label">Workout ${slotIdx + 1}</div>
           <div class="saved-title">${workout.title || "Untitled"}</div>
-          <div class="saved-meta">${workout.exercises.length} exercise${workout.exercises.length !== 1 ? "s" : ""}</div>
+          <div class="saved-meta">${workoutExerciseCount(workout)} exercise${workoutExerciseCount(workout) !== 1 ? "s" : ""}</div>
         </div>
         <span class="slot-arrow">→</span>
       `;
@@ -152,34 +157,45 @@ onAuthStateChanged(auth, async (user) => {
     // View modal
     const viewOverlay = document.getElementById("view-modal-overlay");
 
+    const viewSections = [
+      { key: "warmupExercises",   sectionEl: document.getElementById("view-modal-warmup-section"),   bodyEl: document.getElementById("view-modal-warmup-body") },
+      { key: "exercises",         sectionEl: null,                                                    bodyEl: document.getElementById("view-modal-body") },
+      { key: "cooldownExercises", sectionEl: document.getElementById("view-modal-cooldown-section"),  bodyEl: document.getElementById("view-modal-cooldown-body") },
+    ];
+
     function openViewModal(workout, workoutId) {
       document.getElementById("view-modal-title").textContent = workout.title || "Untitled";
 
-      const exercises = workout.exercises || [];
-      const setCount  = exercises.reduce((sum, ex) => sum + ex.sets, 0);
-      const pillsEl   = document.getElementById("view-modal-pills");
-      const body      = document.getElementById("view-modal-body");
+      const pillsEl = document.getElementById("view-modal-pills");
 
       function renderBody() {
-        renderExerciseTable(body, workout, {
-          onRowClick: (idx) => {
-            exModal.openModal(exercises[idx], idx, { workout, activeWeek: 0, showClientNote: true });
-          },
+        viewSections.forEach(({ key, sectionEl, bodyEl }) => {
+          const exercises = workout[key] || [];
+          if (sectionEl) sectionEl.hidden = exercises.length === 0;
+          renderExerciseTable(bodyEl, exercises, workout.weeks, {
+            onRowClick: (idx) => {
+              exModal.openModal(exercises[idx], idx, { exercises, weeks: workout.weeks, activeWeek: 0, showClientNote: true });
+            },
+          });
         });
       }
 
       function renderPills() {
         const complete = isWorkoutDone(workout);
         pillsEl.innerHTML = `
-          <span class="pill">${exercises.length} exercise${exercises.length !== 1 ? "s" : ""}</span>
-          <span class="pill">${setCount} sets</span>
+          <span class="pill">${workoutExerciseCount(workout)} exercise${workoutExerciseCount(workout) !== 1 ? "s" : ""}</span>
+          <span class="pill">${workoutSetCount(workout)} sets</span>
           <button type="button" class="pill pill-done-btn${complete ? " is-complete" : ""}">${complete ? "✓ Done" : "Mark Done"}</button>
         `;
         pillsEl.querySelector(".pill-done-btn").addEventListener("click", async (e) => {
           const target = !isWorkoutDone(workout);
-          workout.exercises.forEach((ex) => ex.weeks.forEach((w) => { w.done = target; }));
+          const update = {};
+          ["warmupExercises", "exercises", "cooldownExercises"].forEach((key) => {
+            (workout[key] || []).forEach((ex) => ex.weeks.forEach((w) => { w.done = target; }));
+            if (workout[key]) update[key] = workout[key];
+          });
           e.target.disabled = true;
-          await updateDoc(doc(db, "programs", programId, "workouts", workoutId), { exercises: workout.exercises });
+          await updateDoc(doc(db, "programs", programId, "workouts", workoutId), update);
           e.target.disabled = false;
           renderPills();
           renderBody();
@@ -198,53 +214,62 @@ onAuthStateChanged(auth, async (user) => {
     viewOverlay.addEventListener("click", (e) => { if (e.target === viewOverlay) viewOverlay.hidden = true; });
 
     // Edit modal
-    const editOverlay       = document.getElementById("edit-modal-overlay");
-    const editExerciseRows  = document.getElementById("edit-exercise-rows");
-    const editDefaultSetsInput = document.getElementById("edit-default-sets");
-    const editForm          = document.getElementById("edit-modal-form");
+    const editOverlay = document.getElementById("edit-modal-overlay");
+    const editForm     = document.getElementById("edit-modal-form");
 
     let activeWorkoutId = null;
     let activeWorkout   = null;
 
-    function getEditDefaultSets() {
-      return parseInt(editDefaultSetsInput.value, 10) || null;
-    }
+    const getEditNumWeeks = () => activeWorkout?.weeks?.length ?? program.numWeeks;
 
-    editDefaultSetsInput.addEventListener("input", () => {
-      const val = getEditDefaultSets();
-      editExerciseRows.querySelectorAll(".exercise-row").forEach((row) => {
-        const input = row.querySelector(".ex-sets");
-        if (input.disabled) input.value = val ?? "";
-      });
-    });
+    const editWarmupSection = createExerciseSection(
+      document.getElementById("edit-warmup-exercise-rows"), document.getElementById("edit-warmup-default-sets"), getEditNumWeeks
+    );
+    const editCoreSection = createExerciseSection(
+      document.getElementById("edit-exercise-rows"), document.getElementById("edit-default-sets"), getEditNumWeeks
+    );
+    const editCooldownSection = createExerciseSection(
+      document.getElementById("edit-cooldown-exercise-rows"), document.getElementById("edit-cooldown-default-sets"), getEditNumWeeks
+    );
 
-    function addEditExerciseRow(ex, overriding) {
-      addExerciseRow(editExerciseRows, ex, overriding, {
-        getDefaultSets: getEditDefaultSets,
-        numWeeks: activeWorkout?.weeks?.length ?? program.numWeeks,
-      });
-    }
+    const editWarmupToggle   = createCollapsibleSection(document.getElementById("edit-show-warmup-btn"), document.getElementById("edit-warmup-box"));
+    const editCooldownToggle = createCollapsibleSection(document.getElementById("edit-show-cooldown-btn"), document.getElementById("edit-cooldown-box"));
+
+    // Opening a section from its placeholder button starts it with one
+    // exercise row already in place, rather than an empty list.
+    document.getElementById("edit-show-warmup-btn").addEventListener("click", () => editWarmupSection.addRow());
+    document.getElementById("edit-show-cooldown-btn").addEventListener("click", () => editCooldownSection.addRow());
 
     function openEditModal(workout, workoutId) {
       activeWorkoutId = workoutId;
       activeWorkout   = workout;
 
-      document.getElementById("edit-title").value        = workout.title       || "";
-      document.getElementById("edit-notes").value        = workout.notes       || "";
-      editDefaultSetsInput.value                         = workout.defaultSets ?? "";
-      editExerciseRows.innerHTML = "";
+      document.getElementById("edit-title").value = workout.title || "";
+      document.getElementById("edit-notes").value = workout.notes || "";
 
-      workout.exercises.forEach((ex) => {
-        const overriding = ex.setsOverride !== false;
-        addEditExerciseRow(ex, overriding);
-      });
+      document.getElementById("edit-warmup-default-sets").value   = workout.warmupDefaultSets ?? "";
+      document.getElementById("edit-default-sets").value          = workout.defaultSets ?? "";
+      document.getElementById("edit-cooldown-default-sets").value = workout.cooldownDefaultSets ?? "";
+
+      editWarmupSection.clear();
+      editCoreSection.clear();
+      editCooldownSection.clear();
+
+      (workout.warmupExercises || []).forEach((ex) => editWarmupSection.addRow(ex, ex.setsOverride !== false));
+      workout.exercises.forEach((ex) => editCoreSection.addRow(ex, ex.setsOverride !== false));
+      (workout.cooldownExercises || []).forEach((ex) => editCooldownSection.addRow(ex, ex.setsOverride !== false));
+
+      if ((workout.warmupExercises || []).length > 0) editWarmupToggle.expand(); else editWarmupToggle.collapse();
+      if ((workout.cooldownExercises || []).length > 0) editCooldownToggle.expand(); else editCooldownToggle.collapse();
 
       editOverlay.hidden = false;
     }
 
     document.getElementById("edit-modal-close").addEventListener("click", () => { editOverlay.hidden = true; });
     editOverlay.addEventListener("click", (e) => { if (e.target === editOverlay) editOverlay.hidden = true; });
-    document.getElementById("edit-add-exercise").addEventListener("click", () => addEditExerciseRow({}, false));
+    document.getElementById("edit-add-warmup-exercise").addEventListener("click", () => editWarmupSection.addRow());
+    document.getElementById("edit-add-exercise").addEventListener("click", () => editCoreSection.addRow());
+    document.getElementById("edit-add-cooldown-exercise").addEventListener("click", () => editCooldownSection.addRow());
 
     editForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -253,33 +278,28 @@ onAuthStateChanged(auth, async (user) => {
       submitBtn.textContent = "Saving…";
 
       try {
-        const defaultSets  = getEditDefaultSets();
-        const oldExercises = activeWorkout.exercises || [];
-        const numWeeks     = activeWorkout.weeks.length;
+        const numWeeks = activeWorkout.weeks.length;
 
-        const exercises = [...editExerciseRows.querySelectorAll(".exercise-row")].map((row, i) => {
-          const { weeklySets, weeklyReps, ...ex } = readExerciseRow(row, defaultSets);
-          const oldWeeks = oldExercises[i]?.weeks;
-
-          return {
-            ...ex,
-            weeks: Array.from({ length: numWeeks }, (_, w) => {
-              const base = oldWeeks?.[w] ?? { weight: "" };
-              if (ex.perWeekSetsReps) return { ...base, sets: weeklySets[w], reps: weeklyReps[w] };
-              const { sets, reps, ...rest } = base;
-              return rest;
-            }),
-          };
-        });
+        const warmupExercises   = buildExercisesWithWeeks(editWarmupSection.readRows(), numWeeks, activeWorkout.warmupExercises);
+        const exercises         = buildExercisesWithWeeks(editCoreSection.readRows(), numWeeks, activeWorkout.exercises);
+        const cooldownExercises = buildExercisesWithWeeks(editCooldownSection.readRows(), numWeeks, activeWorkout.cooldownExercises);
 
         const newTitle = document.getElementById("edit-title").value.trim();
         const newNotes = document.getElementById("edit-notes").value.trim();
+        const warmupDefaultSets   = editWarmupSection.getDefaultSets();
+        const defaultSets         = editCoreSection.getDefaultSets();
+        const cooldownDefaultSets = editCooldownSection.getDefaultSets();
 
-        await updateDoc(doc(db, "programs", programId, "workouts", activeWorkoutId), {
-          title: newTitle, notes: newNotes, defaultSets, exercises,
-        });
+        const updated = {
+          title: newTitle, notes: newNotes,
+          warmupDefaultSets, warmupExercises,
+          defaultSets, exercises,
+          cooldownDefaultSets, cooldownExercises,
+        };
 
-        workoutDocs[activeWorkoutId] = { ...activeWorkout, title: newTitle, notes: newNotes, defaultSets, exercises };
+        await updateDoc(doc(db, "programs", programId, "workouts", activeWorkoutId), updated);
+
+        workoutDocs[activeWorkoutId] = { ...activeWorkout, ...updated };
         editOverlay.hidden = true;
         renderSlots();
         renderProgramDoneButton();
@@ -309,8 +329,8 @@ onAuthStateChanged(auth, async (user) => {
 
         if (workout) {
           if (isWorkoutDone(workout)) row.classList.add("saved-row--done");
-          const exCount  = workout.exercises?.length ?? 0;
-          const setCount = workout.exercises?.reduce((sum, ex) => sum + ex.sets, 0) ?? 0;
+          const exCount  = workoutExerciseCount(workout);
+          const setCount = workoutSetCount(workout);
           row.innerHTML = `
             <div class="saved-info">
               <div class="slot-label">Workout ${slotIdx + 1}</div>

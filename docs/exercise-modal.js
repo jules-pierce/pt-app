@@ -46,12 +46,14 @@ export function setupExerciseModal({ videoSrc = "videos/video.MOV" } = {}) {
   });
 
   // openModal(exercise, exIdx, context)
+  // context.exercises                   — the section's exercise array (exercise === exercises[exIdx])
+  // context.weeks                       — workout.weeks (RPE per week)
   // context.onSaveWeight(w, exIdx, val) — omit for read-only
   // context.onSaveNote(w, exIdx, val)   — omit to hide client note UI
   // context.showClientNote              — show client notes read-only (provider view)
   // context.onToggleDone(week, exIdx)   — omit to hide Done button
-  function openModal(exercise, exIdx, { workout, activeWeek, onSaveWeight, onSaveNote, showClientNote, onToggleDone } = {}) {
-    const isDone = workout.exercises[exIdx]?.weeks?.[activeWeek]?.done || false;
+  function openModal(exercise, exIdx, { exercises, weeks, activeWeek, onSaveWeight, onSaveNote, showClientNote, onToggleDone } = {}) {
+    const isDone = exercises[exIdx]?.weeks?.[activeWeek]?.done || false;
     const units  = exercise.units || "lb";
 
     overlay.querySelector(".em-number").textContent = exIdx + 1;
@@ -65,7 +67,7 @@ export function setupExerciseModal({ videoSrc = "videos/video.MOV" } = {}) {
       providerNotesSection.hidden = true;
     }
 
-    const activeWeekData = workout.exercises[exIdx]?.weeks?.[activeWeek] || {};
+    const activeWeekData = exercises[exIdx]?.weeks?.[activeWeek] || {};
     const activeSets = exercise.perWeekSetsReps ? (activeWeekData.sets ?? exercise.sets) : exercise.sets;
     const activeReps = exercise.perWeekSetsReps ? (activeWeekData.reps ?? exercise.reps) : exercise.reps;
 
@@ -94,8 +96,8 @@ export function setupExerciseModal({ videoSrc = "videos/video.MOV" } = {}) {
     </tr></thead>`;
     const tbody = document.createElement("tbody");
 
-    workout.weeks.forEach((week, w) => {
-      const weekData  = workout.exercises[exIdx]?.weeks?.[w] || {};
+    weeks.forEach((week, w) => {
+      const weekData  = exercises[exIdx]?.weeks?.[w] || {};
       const saved     = weekData.weight || "";
       const savedNote = weekData.clientNote || "";
       const isActive  = w === activeWeek;

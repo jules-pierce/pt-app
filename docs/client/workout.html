@@ -21,9 +21,26 @@
       <p id="workout-notes"></p>
     </section>
 
-    <div class="view-table-wrap view-table-wrap--scroll-fade">
-      <div id="exercise-table"></div>
-    </div>
+    <section id="warmup-section" class="workout-section-box" hidden>
+      <div class="workout-section-title">Warmup</div>
+      <div class="view-table-wrap view-table-wrap--scroll-fade">
+        <div id="warmup-table"></div>
+      </div>
+    </section>
+
+    <section class="workout-section-box">
+      <div class="workout-section-title">Workout</div>
+      <div class="view-table-wrap view-table-wrap--scroll-fade">
+        <div id="exercise-table"></div>
+      </div>
+    </section>
+
+    <section id="cooldown-section" class="workout-section-box" hidden>
+      <div class="workout-section-title">Cooldown</div>
+      <div class="view-table-wrap view-table-wrap--scroll-fade">
+        <div id="cooldown-table"></div>
+      </div>
+    </section>
 
     <div class="mark-done-footer">
       <button id="workout-done-btn" class="btn-mark-done btn-mark-done--inline" type="button"></button>

@@ -14,7 +14,7 @@ function formatRange(values) {
   return `${values[0]}-${values[values.length - 1]}`;
 }
 
-export function renderExerciseTable(container, workout, {
+export function renderExerciseTable(container, exercises, weeks, {
   editableWeight = false,
   showDone       = false,
   activeWeek     = null,
@@ -22,8 +22,8 @@ export function renderExerciseTable(container, workout, {
   onToggleDone,   // (weekIdx, exIdx)
   onRowClick,     // (exIdx)
 } = {}) {
-  const exercises = workout.exercises || [];
-  const weeks     = workout.weeks || [];
+  exercises = exercises || [];
+  weeks     = weeks || [];
 
   container.innerHTML = "";
 

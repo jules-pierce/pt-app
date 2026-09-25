@@ -122,11 +122,15 @@ main {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Form ────────────────────────────────────────────────────────────────── */
-#workout-form, #program-form {
+#workout-form, #program-form, #edit-modal-form {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
+
+/* Spacing between sections already comes from the form's own gap. */
+#edit-modal-form .workout-section-box, #workout-form .workout-section-box,
+#edit-modal-form .btn-add-workout, #workout-form .btn-add-workout { margin: 0; }
 
 .form-section { display: flex; flex-direction: column; gap: 0.4rem; }
 
@@ -385,6 +389,9 @@ main {
 .saved-meta  { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem; }
 .saved-pills { display: flex; gap: 0.4rem; margin-top: 0.35rem; flex-wrap: wrap; }
 
+/* Extra breathing room before the first boxed section in the workout view modal. */
+#view-modal-pills { margin-bottom: 1.25rem; }
+
 .slot-arrow {
   color: var(--accent-light);
   font-size: 1.1rem;
@@ -559,6 +566,27 @@ main {
 }
 .modal-close-btn:hover { color: var(--text); }
 
+.workout-section-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.workout-section-box:last-child { margin-bottom: 0; }
+.workout-section-box[hidden] { display: none; }
+
+.workout-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
 .view-table-wrap { overflow-x: auto; }
 
 /* Edge shadows hinting the table scrolls horizontally. The "local" layers
@@ -568,12 +596,12 @@ main {
    the edge itself rather than to whatever column happens to be there. */
 .view-table-wrap--scroll-fade {
   background:
-    linear-gradient(to right, var(--bg) 40%, transparent),
-    linear-gradient(to left,  var(--bg) 40%, transparent) 100% 0,
+    linear-gradient(to right, var(--surface) 40%, transparent),
+    linear-gradient(to left,  var(--surface) 40%, transparent) 100% 0,
     linear-gradient(to right, rgba(0, 0, 0, 0.45), transparent),
     linear-gradient(to left,  rgba(0, 0, 0, 0.45), transparent) 100% 0;
   background-repeat: no-repeat;
-  background-color: var(--bg);
+  background-color: var(--surface);
   background-size: 28px 100%, 28px 100%, 12px 100%, 12px 100%;
   background-position: 0 0, 100% 0, 0 0, 100% 0;
   background-attachment: local, local, scroll, scroll;

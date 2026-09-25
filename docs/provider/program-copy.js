@@ -53,15 +53,23 @@ async function loadSourcePrograms() {
 
 // Strips per-client state (done status, client notes, logged weights) so a
 // copied program starts fresh for its new client.
-function sanitizeWorkoutForCopy(workoutData) {
-  const exercises = (workoutData.exercises || []).map((ex) => ({
+function sanitizeExercises(exercises) {
+  return (exercises || []).map((ex) => ({
     ...ex,
     weeks: (ex.weeks || []).map((week) => {
       const { done, clientNote, ...rest } = week;
       return { ...rest, weight: "" };
     }),
   }));
-  return { ...workoutData, exercises };
+}
+
+function sanitizeWorkoutForCopy(workoutData) {
+  return {
+    ...workoutData,
+    warmupExercises:   sanitizeExercises(workoutData.warmupExercises),
+    exercises:         sanitizeExercises(workoutData.exercises),
+    cooldownExercises: sanitizeExercises(workoutData.cooldownExercises),
+  };
 }
 
 function selectSource(programId, program) {
