@@ -37,6 +37,7 @@ export function renderExerciseTable(container, exercises, weeks, {
     const weekDone    = showWeekStatus && exercises.every((ex) => ex.weeks?.[i]?.done);
     const weekSkipped = showWeekStatus && !weekDone && !!w?.skipped;
     const classes = [
+      "week-header",
       i === activeWeek ? "active-week" : "",
       weekDone    ? "week-header-done" : "",
       weekSkipped ? "week-header-skipped" : "",
