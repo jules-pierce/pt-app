@@ -123,7 +123,12 @@ Navigation: `index.html` → `program-new.html` → `program.html?id=X` → `add
 }
 
 // users/{uid}
-{ role: "provider" | "client" }
+{
+  firstName: "Jane",       // set at sign-up; missing on accounts created before names were added
+  lastName:  "Doe",
+  email:     "jane@example.com",
+  role:      "provider" | "client",
+}
 ```
 
 ---

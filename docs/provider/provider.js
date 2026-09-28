@@ -21,6 +21,10 @@ onAuthStateChanged(auth, async (user) => {
   const programSnap = await getDoc(doc(db, "programs", programId));
   if (programSnap.exists()) program = programSnap.data();
 
+  const crumbProgram = document.getElementById("crumb-program");
+  crumbProgram.textContent = program?.title ?? "Program";
+  crumbProgram.href        = `program.html?id=${programId}`;
+
   renderRpeRows();
 
   // A placeholder workout has no core exercises: hide that section and drop

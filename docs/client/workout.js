@@ -10,8 +10,6 @@ const params    = new URLSearchParams(window.location.search);
 const programId = params.get("program");
 const workoutId = params.get("workout");
 
-document.getElementById("back-link").href = `program.html?id=${programId}`;
-
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = "../login.html"; return; }
   addSignOutButton();
@@ -31,6 +29,9 @@ onAuthStateChanged(auth, async (user) => {
 
   const workout = workoutSnap.data();
 
+  const crumbProgram = document.getElementById("crumb-program");
+  crumbProgram.textContent = programSnap.data().title;
+  crumbProgram.href        = `program.html?id=${programId}`;
   document.getElementById("workout-title").textContent = workout.title;
 
   if (workout.notes) {

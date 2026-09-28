@@ -44,14 +44,20 @@ body {
 header {
   background: linear-gradient(135deg, var(--oc-dark-7) 0%, var(--oc-violet-9) 50%, var(--oc-dark-7) 100%);
   border-bottom: 1px solid var(--border);
-  padding: 2.5rem 1.5rem 2rem;
-  text-align: center;
+  padding: 0.85rem 1.5rem;
 }
 
-.header-inner { max-width: 720px; margin: 0 auto; }
+.header-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
 
 .label {
   display: inline-block;
+  flex-shrink: 0;
   background: rgba(132, 94, 247, 0.25);
   color: var(--accent-light);
   font-size: 0.7rem;
@@ -61,20 +67,37 @@ header {
   padding: 0.3rem 0.75rem;
   border-radius: 999px;
   border: 1px solid rgba(132, 94, 247, 0.4);
-  margin-bottom: 0.75rem;
 }
 
-header h1 {
-  font-size: clamp(1.75rem, 5vw, 2.5rem);
+/* Single-line path: Programs › Program › Workout. Earlier crumbs are links;
+   the last is the current page. Truncates with an ellipsis when too long. */
+.breadcrumb {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.05rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.breadcrumb a {
+  color: var(--text-muted);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.breadcrumb a:hover { color: var(--accent-light); }
+.crumb-sep {
+  color: var(--text-muted);
+  font-weight: 400;
+  margin: 0 0.4rem;
 }
 
-header p {
+.page-meta {
   color: var(--text-muted);
-  margin-top: 0.4rem;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
 }
 
 /* ── Main ────────────────────────────────────────────────────────────────── */
@@ -85,19 +108,6 @@ main {
   margin: 0 auto;
   padding: 1.5rem 1rem 3rem;
 }
-
-/* ── Back link ───────────────────────────────────────────────────────────── */
-.back-link {
-  display: inline-block;
-  color: var(--accent-light);
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-  margin-bottom: 1rem;
-  opacity: 0.8;
-  transition: opacity 0.15s;
-}
-.back-link:hover { opacity: 1; }
 
 /* ── Sign out button ─────────────────────────────────────────────────────── */
 .btn-signout {
@@ -110,7 +120,7 @@ main {
   font-weight: 600;
   padding: 0.3rem 0.75rem;
   cursor: pointer;
-  margin-top: 0.75rem;
+  flex-shrink: 0;
   transition: color 0.15s, border-color 0.15s;
 }
 .btn-signout:hover { color: var(--red); border-color: var(--red); }
@@ -1218,6 +1228,8 @@ footer span { color: var(--red); }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
+  header { padding: 0.75rem 1rem; }
+  header .label { display: none; }
   .stats-bar { gap: 0.5rem; }
   .stat { padding: 0.75rem 0.5rem; }
   .stat-value { font-size: 1.25rem; }

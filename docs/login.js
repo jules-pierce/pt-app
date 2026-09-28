@@ -48,13 +48,15 @@ document.getElementById("signup-form").addEventListener("submit", async (e) => {
   const errorEl = document.getElementById("signup-error");
   errorEl.style.display = "none";
 
-  const email    = document.getElementById("signup-email").value.trim();
-  const password = document.getElementById("signup-password").value;
+  const firstName = document.getElementById("signup-first-name").value.trim();
+  const lastName  = document.getElementById("signup-last-name").value.trim();
+  const email     = document.getElementById("signup-email").value.trim();
+  const password  = document.getElementById("signup-password").value;
   const role     = document.querySelector('input[name="role"]:checked').value;
 
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
-    await setDoc(doc(db, "users", cred.user.uid), { email, role });
+    await setDoc(doc(db, "users", cred.user.uid), { firstName, lastName, email, role });
     redirect(role);
   } catch (err) {
     errorEl.textContent   = err.message ?? "Could not create account.";

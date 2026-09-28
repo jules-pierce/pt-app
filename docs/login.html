@@ -41,6 +41,7 @@
       color: var(--oc-gray-5);
       margin-bottom: 0.4rem;
     }
+    input[type="text"],
     input[type="email"],
     input[type="password"] {
       display: block;
@@ -55,6 +56,11 @@
       font-family: inherit;
     }
     input:focus { outline: none; border-color: var(--oc-violet-5); }
+    .name-row {
+      display: flex;
+      gap: 1rem;
+    }
+    .name-row > div { flex: 1; min-width: 0; }
     .role-row {
       display: flex;
       gap: 1rem;
@@ -130,6 +136,16 @@
     <section id="signup-section">
       <p class="subtitle">Create your account</p>
       <form id="signup-form">
+        <div class="name-row">
+          <div>
+            <label for="signup-first-name">First name</label>
+            <input id="signup-first-name" type="text" required autocomplete="given-name" />
+          </div>
+          <div>
+            <label for="signup-last-name">Last name</label>
+            <input id="signup-last-name" type="text" required autocomplete="family-name" />
+          </div>
+        </div>
         <label for="signup-email">Email</label>
         <input id="signup-email" type="email" required autocomplete="email" />
         <label for="signup-password">Password</label>
