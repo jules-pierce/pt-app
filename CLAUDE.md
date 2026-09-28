@@ -10,6 +10,9 @@ A static workout app hosted on GitHub Pages. No backend, no build step — plain
 ## Local development
 Open `docs/client/index.html` or `docs/provider/index.html` directly in a browser.
 
+## Tests
+`npm test` runs unit tests in `tests/` using Node's built-in `node:test` runner (no dependencies). Only pure-logic modules that don't import Firebase or touch the DOM are tested (`workout-status.js`, `buildExercisesWithWeeks` in `exercise-form-row.js`). Tests live outside `docs/` so they aren't deployed.
+
 ## Deployment
 GitHub Pages serves from the `main` branch, `/docs` folder. Pushes to `main` redeploy automatically. Check status at https://github.com/jules-pierce/pt-app/actions.
 

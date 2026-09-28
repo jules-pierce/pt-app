@@ -17,6 +17,9 @@ Two accounts, both with password "password".
 - julesjpierce+client@gmail.com
 - julesjpierce+provider@gmail.com
 
+Unit tests
+`npm test` from the pt-app directory.
+
 ## Local development
 
 ES modules require an HTTP server — opening files directly in the browser won't work.
