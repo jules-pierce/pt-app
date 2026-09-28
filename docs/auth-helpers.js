@@ -41,3 +41,20 @@ export async function checkRole(user, expectedRole, loginPath = "../login.html")
 
   return false;
 }
+
+// "First Last" for a user, falling back to their email for accounts created
+// before names were collected.
+export function displayName(userData) {
+  const name = [userData?.firstName, userData?.lastName].filter(Boolean).join(" ");
+  return name || userData?.email || "Unknown";
+}
+
+// Fills the provider header's client crumb (#crumb-client), linking it to
+// that client's program list. No-op on pages without the crumb.
+export async function setClientCrumb(clientId) {
+  const el = document.getElementById("crumb-client");
+  if (!el || !clientId) return;
+  const snap = await getDoc(doc(db, "users", clientId));
+  el.textContent = displayName(snap.data());
+  if (el.tagName === "A") el.href = `programs.html?client=${clientId}`;
+}

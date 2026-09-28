@@ -3,7 +3,9 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/f
 import {
   collection, addDoc, doc, getDoc, getDocs, query, where, serverTimestamp, updateDoc,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { addSignOutButton, checkRole } from "../auth-helpers.js";
+import { addSignOutButton, checkRole, setClientCrumb } from "../auth-helpers.js";
+
+const clientId = new URLSearchParams(window.location.search).get("client");
 
 let currentUser      = null;
 let sourceProgramId  = null;
@@ -17,7 +19,9 @@ onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = "../login.html"; return; }
   addSignOutButton();
   if (!await checkRole(user, "provider")) return;
+  if (!clientId) { window.location.href = "index.html"; return; }
   currentUser = user;
+  setClientCrumb(clientId);
   await loadSourcePrograms();
 });
 
@@ -100,21 +104,7 @@ document.getElementById("copy-form").addEventListener("submit", async (e) => {
   submitBtn.textContent = "Copying…";
 
   try {
-    const clientEmail = document.getElementById("client-email").value.trim();
-
-    const usersSnap = await getDocs(
-      query(collection(db, "users"), where("email", "==", clientEmail))
-    );
-
-    if (usersSnap.empty) {
-      alert(`No account found for "${clientEmail}". Ask the client to sign in once first.`);
-      submitBtn.disabled    = false;
-      submitBtn.textContent = "Copy Program";
-      return;
-    }
-
-    const clientId = usersSnap.docs[0].id;
-    const slots     = sourceProgram.workoutSlots || [];
+    const slots = sourceProgram.workoutSlots || [];
 
     const programRef = await addDoc(collection(db, "programs"), {
       title:        document.getElementById("title").value.trim(),

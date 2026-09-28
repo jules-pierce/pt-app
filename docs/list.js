@@ -1,10 +1,12 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { collection, query, where, getDocs, doc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { addSignOutButton } from "./auth-helpers.js";
+import { addSignOutButton, setClientCrumb } from "./auth-helpers.js";
 import { isProgramDone } from "./workout-status.js";
 
 const container = document.getElementById("program-list");
+// Provider only: the client whose programs are shown (chosen on the Clients page).
+const clientId  = new URLSearchParams(window.location.search).get("client");
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = "../login.html"; return; }
@@ -20,10 +22,14 @@ onAuthStateChanged(auth, async (user) => {
 
   document.getElementById("role-label").textContent = role === "provider" ? "Provider" : "Training Plan";
 
+  if (role === "provider" && !clientId) { window.location.href = "index.html"; return; }
+  if (role === "provider") setClientCrumb(clientId);
+
   container.innerHTML = `<p class="empty-state">Loading…</p>`;
 
-  const field    = role === "provider" ? "providerId" : "clientId";
-  const q        = query(collection(db, "programs"), where(field, "==", user.uid));
+  const q = role === "provider"
+    ? query(collection(db, "programs"), where("providerId", "==", user.uid), where("clientId", "==", clientId))
+    : query(collection(db, "programs"), where("clientId", "==", user.uid));
   const snapshot = await getDocs(q);
 
   container.innerHTML = "";
@@ -104,8 +110,8 @@ function openCreateChoiceModal() {
         <button type="button" class="modal-close-btn" id="create-choice-close">✕</button>
         <h2>Create Program</h2>
         <div class="choice-options">
-          <a href="program-new.html" class="btn-choice btn-choice--primary">Start From Scratch</a>
-          <a href="program-copy.html" class="btn-choice btn-choice--secondary">Copy an Existing Program</a>
+          <a href="program-new.html?client=${clientId}" class="btn-choice btn-choice--primary">Start From Scratch</a>
+          <a href="program-copy.html?client=${clientId}" class="btn-choice btn-choice--secondary">Copy an Existing Program</a>
         </div>
       </div>
     `;

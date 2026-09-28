@@ -24,8 +24,8 @@ Two separate static apps share the same Firebase project (Firestore + Auth) and 
 ### Shared files (`docs/`)
 | File | Purpose |
 |---|---|
-| `firebase-config.js` | Firebase app, `db`, `auth` exports |
-| `auth-helpers.js` | `addSignOutButton`, `checkRole` |
+| `firebase-config.js` | Firebase app, `db`, `auth`, `firebaseConfig` exports |
+| `auth-helpers.js` | `addSignOutButton`, `checkRole`, `displayName`, `setClientCrumb` (fills the provider header's client crumb) |
 | `open-color.css` | Color palette variables |
 | `styles.css` | All styles for both apps |
 | `login.html` + `login.js` | Shared sign-in / sign-up page |
@@ -48,12 +48,16 @@ The trainer-facing app. Creates and edits programs and workouts.
 
 | File | Purpose |
 |---|---|
-| `index.html` + `list.js` | Programs list (shim — imports `../list.js`) |
-| `program-new.html` + `program-new.js` | Create a new program |
+| `index.html` + `clients.js` | Entry screen: searchable dropdown of linked clients (from `users/{uid}/clients`; filters by name/email, keyboard-navigable; user docs fetched in batches of 30 via `documentId() in`), plus **Connect Existing Client** (link a client account by email) and **Create New Client** (creates the account on a secondary Firebase app so the provider stays signed in, then emails the client a password-reset link to set their password) |
+| `programs.html` + `list.js` | Programs list for one client, `?client=X` (shim — imports `../list.js`) |
+| `program-new.html` + `program-new.js` | Create a new program for `?client=X` |
+| `program-copy.html` + `program-copy.js` | Copy an existing program to `?client=X` |
 | `program.html` + `program.js` | Workout slots; inline View and Edit modals |
 | `add.html` + `provider.js` | Add a workout to a slot |
 
-Navigation: `index.html` → `program-new.html` → `program.html?id=X` → `add.html?program=X&slot=N`
+Navigation: `index.html` (pick client) → `programs.html?client=C` → `program-new.html?client=C` → `program.html?id=X` → `add.html?program=X&slot=N`
+
+Provider headers read Clients › {client name} › {program} › …; the client crumb links back to that client's program list.
 
 ---
 
@@ -63,7 +67,7 @@ Navigation: `index.html` → `program-new.html` → `program.html?id=X` → `add
 
 ### What is already shared
 - CSS (`docs/styles.css`) — one file for both apps
-- Programs list (`docs/list.js`) — role-aware; queries by `providerId` or `clientId`, shows Delete and Create for providers only
+- Programs list (`docs/list.js`) — role-aware; clients see their own programs, providers see their programs for the `?client=` in the URL; shows Delete and Create for providers only
 - Login, Firebase config, auth helpers
 
 ### What still needs sharing (future work)
@@ -128,6 +132,11 @@ Navigation: `index.html` → `program-new.html` → `program.html?id=X` → `add
   lastName:  "Doe",
   email:     "jane@example.com",
   role:      "provider" | "client",
+}
+
+// users/{providerUid}/clients/{clientUid}   — providers only; one doc per linked client
+{
+  linkedAt: Timestamp,
 }
 ```
 

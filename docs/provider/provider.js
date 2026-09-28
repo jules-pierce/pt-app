@@ -1,7 +1,7 @@
 import { auth, db } from "../firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, getDoc, getDocs, addDoc, updateDoc, collection, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { addSignOutButton, checkRole } from "../auth-helpers.js";
+import { addSignOutButton, checkRole, setClientCrumb } from "../auth-helpers.js";
 import { createExerciseSection, buildExercisesWithWeeks, createCollapsibleSection } from "../exercise-form-row.js";
 
 const params        = new URLSearchParams(window.location.search);
@@ -24,6 +24,7 @@ onAuthStateChanged(auth, async (user) => {
   const crumbProgram = document.getElementById("crumb-program");
   crumbProgram.textContent = program?.title ?? "Program";
   crumbProgram.href        = `program.html?id=${programId}`;
+  setClientCrumb(program?.clientId);
 
   renderRpeRows();
 

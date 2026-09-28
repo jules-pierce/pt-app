@@ -3,22 +3,91 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Programs</title>
+  <title>Clients</title>
   <link rel="stylesheet" href="../open-color.css" />
   <link rel="stylesheet" href="../styles.css" />
 </head>
 <body>
   <header>
     <div class="header-inner">
-      <span class="label" id="role-label"></span>
-      <h1 class="breadcrumb"><span>Programs</span></h1>
+      <span class="label">Provider</span>
+      <h1 class="breadcrumb"><span>Clients</span></h1>
     </div>
   </header>
 
   <main>
-    <div id="program-list"></div>
+    <label class="form-label" for="client-search">Choose a client</label>
+    <div class="combobox">
+      <input class="form-input" id="client-search" type="text" role="combobox"
+             aria-expanded="false" aria-controls="client-options" aria-autocomplete="list"
+             placeholder="Search by name or email…" autocomplete="off" disabled />
+      <ul class="combobox-list" id="client-options" role="listbox" hidden></ul>
+    </div>
+    <p id="client-status" class="empty-state combobox-status"></p>
+
+    <div class="client-actions">
+      <button type="button" class="btn-add-workout" id="connect-client-btn">+ Connect Existing Client</button>
+      <button type="button" class="btn-add-workout" id="create-client-btn">+ Create New Client</button>
+    </div>
   </main>
 
-  <script type="module" src="list.js"></script>
+  <div id="connect-overlay" class="view-modal-overlay" hidden>
+    <div class="view-modal modal-narrow">
+      <button type="button" class="modal-close-btn" data-close>✕</button>
+      <h2>Connect Existing Client</h2>
+      <form id="connect-form" class="modal-form">
+        <p class="modal-hint">Enter the email the client signed up with.</p>
+        <div class="form-section">
+          <label class="form-label" for="connect-email">Client Email</label>
+          <input class="form-input" id="connect-email" type="email" autocomplete="off" required />
+        </div>
+        <p class="form-error" hidden></p>
+        <button class="btn-save" type="submit">Connect Client</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="create-overlay" class="view-modal-overlay" hidden>
+    <div class="view-modal modal-narrow">
+      <button type="button" class="modal-close-btn" data-close>✕</button>
+      <h2>Create New Client</h2>
+      <form id="create-form" class="modal-form">
+        <p class="modal-hint">We'll email the client a link to set their password.</p>
+        <div class="form-row">
+          <div class="form-section">
+            <label class="form-label" for="create-first-name">First Name</label>
+            <input class="form-input" id="create-first-name" type="text" autocomplete="off" required />
+          </div>
+          <div class="form-section">
+            <label class="form-label" for="create-last-name">Last Name</label>
+            <input class="form-input" id="create-last-name" type="text" autocomplete="off" required />
+          </div>
+        </div>
+        <div class="form-section">
+          <label class="form-label" for="create-email">Client Email</label>
+          <input class="form-input" id="create-email" type="email" autocomplete="off" required />
+        </div>
+        <p class="form-error" hidden></p>
+        <button class="btn-save" type="submit">Create Client</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Shown after Connect Existing Client or Create New Client succeeds -->
+  <div id="success-overlay" class="view-modal-overlay" hidden>
+    <div class="view-modal modal-narrow modal-success" role="dialog" aria-labelledby="success-title">
+      <button type="button" class="modal-close-btn" data-close>✕</button>
+      <div class="success-icon" aria-hidden="true">✓</div>
+      <h2 id="success-title"></h2>
+      <p class="success-text"><strong id="success-name"></strong> has been added to your clients.</p>
+      <p class="success-text"><span id="success-note"></span> <strong id="success-email"></strong>.</p>
+      <div class="choice-options">
+        <a id="success-programs-link" class="btn-choice btn-choice--primary"></a>
+        <button type="button" class="btn-choice btn-choice--secondary" data-close>Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="clients.js"></script>
 </body>
 </html>

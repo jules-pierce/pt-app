@@ -1,7 +1,7 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { doc, getDoc, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { addSignOutButton } from "./auth-helpers.js";
+import { addSignOutButton, setClientCrumb } from "./auth-helpers.js";
 import { setupExerciseModal } from "./exercise-modal.js";
 import { renderExerciseTable } from "./exercise-table.js";
 import { createExerciseSection, buildExercisesWithWeeks, createCollapsibleSection } from "./exercise-form-row.js";
@@ -36,6 +36,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   document.getElementById("program-title").textContent = program.title;
+  if (role === "provider") setClientCrumb(program.clientId);
   document.getElementById("program-meta").textContent  =
     `${program.numWeeks} weeks · ${program.workoutSlots.length} workouts`;
 
