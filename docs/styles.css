@@ -55,18 +55,11 @@ header {
   gap: 0.75rem;
 }
 
-.label {
-  display: inline-block;
+.logo {
+  display: block;
   flex-shrink: 0;
-  background: rgba(132, 94, 247, 0.25);
-  color: var(--accent-light);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 0.3rem 0.75rem;
-  border-radius: 999px;
-  border: 1px solid rgba(132, 94, 247, 0.4);
+  width: 2rem;
+  height: 2rem;
 }
 
 /* Single-line path: Programs › Program › Workout. Earlier crumbs are links;
@@ -1309,7 +1302,6 @@ footer span { color: var(--red); }
 @media (max-width: 480px) {
   .client-actions { grid-template-columns: 1fr; }
   header { padding: 0.75rem 1rem; }
-  header .label { display: none; }
   .stats-bar { gap: 0.5rem; }
   .stat { padding: 0.75rem 0.5rem; }
   .stat-value { font-size: 1.25rem; }

@@ -27,6 +27,7 @@ Two separate static apps share the same Firebase project (Firestore + Auth) and 
 | `firebase-config.js` | Firebase app, `db`, `auth`, `firebaseConfig` exports |
 | `auth-helpers.js` | `addSignOutButton`, `checkRole`, `displayName`, `setClientCrumb` (fills the provider header's client crumb) |
 | `open-color.css` | Color palette variables |
+| `logo.svg` | Smiley logo shown top-left in every header (provider and client) |
 | `styles.css` | All styles for both apps |
 | `login.html` + `login.js` | Shared sign-in / sign-up page |
 | `list.js` | Shared programs list logic (role-aware) |

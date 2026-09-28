@@ -20,8 +20,6 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  document.getElementById("role-label").textContent = role === "provider" ? "Provider" : "Training Plan";
-
   if (role === "provider" && !clientId) { window.location.href = "index.html"; return; }
   if (role === "provider") setClientCrumb(clientId);
 

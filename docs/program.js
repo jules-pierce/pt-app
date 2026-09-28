@@ -17,9 +17,6 @@ onAuthStateChanged(auth, async (user) => {
   const userSnap = await getDoc(doc(db, "users", user.uid));
   const role     = userSnap.exists() ? userSnap.data().role : null;
 
-  document.getElementById("role-label").textContent =
-    role === "provider" ? "Provider" : "Training Plan";
-
   const programSnap = await getDoc(doc(db, "programs", programId));
   if (!programSnap.exists()) {
     document.querySelector("main").innerHTML = `<p class="empty-state">Program not found.</p>`;
